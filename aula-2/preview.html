@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — Alprox Processos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --verde: #1E6F50;
+    --verde-escuro: #14503A;
+    --cinza-claro: #F3F5F4;
+    --cinza-borda: #E2E6E4;
+    --cinza-texto: #64726C;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--cinza-claro);
+    color: #1F2A26;
+    padding: 24px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  header h1 {
+    font-size: 20px;
+    color: var(--verde-escuro);
+    margin: 0 0 4px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--cinza-texto);
+    margin: 0;
+  }
+
+  .preview-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .preview-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .preview-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--cinza-texto);
+  }
+
+  /* ---- Moldura de celular ---- */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: #111;
+    border-radius: 46px;
+    padding: 14px;
+    box-shadow: 0 20px 40px rgba(0,0,0,.18);
+    position: relative;
+  }
+
+  .phone-frame::before {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 24px;
+    background: #111;
+    border-radius: 0 0 16px 16px;
+    z-index: 2;
+  }
+
+  .phone-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 32px;
+    background: #fff;
+    display: block;
+  }
+
+  /* ---- Moldura de computador ---- */
+  .desktop-frame {
+    width: clamp(860px, 55vw, 1100px);
+    background: #111;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 10px 0;
+    box-shadow: 0 20px 40px rgba(0,0,0,.18);
+  }
+
+  .desktop-frame .bar {
+    display: flex;
+    gap: 6px;
+    padding: 2px 6px 8px;
+  }
+
+  .desktop-frame .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #555;
+  }
+
+  .desktop-frame iframe {
+    width: 100%;
+    height: 760px;
+    border: none;
+    background: #fff;
+    border-radius: 4px 4px 0 0;
+    display: block;
+  }
+
+  .desktop-frame .stand {
+    height: 16px;
+    background: #111;
+    margin: 0 -10px;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .app-url {
+    font-size: 11px;
+    color: var(--cinza-texto);
+    text-align: center;
+  }
+
+  code {
+    background: #fff;
+    border: 1px solid var(--cinza-borda);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🖥️📱 Preview duplo — Alprox Processos</h1>
+  <p>O mesmo app rodando ao vivo nos dois tamanhos. Deixe esta página aberta enquanto construímos — cada mudança aparece aqui sozinha.</p>
+</header>
+
+<div class="preview-wrap">
+  <div class="preview-col">
+    <span class="preview-label">Celular</span>
+    <div class="phone-frame">
+      <iframe src="http://localhost:5500/index.html" title="Alprox Processos - mobile"></iframe>
+    </div>
+    <span class="app-url">largura ~390px</span>
+  </div>
+
+  <div class="preview-col">
+    <span class="preview-label">Computador</span>
+    <div class="desktop-frame">
+      <div class="bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <iframe src="http://localhost:5500/index.html" title="Alprox Processos - desktop"></iframe>
+      <div class="stand"></div>
+    </div>
+    <span class="app-url">App rodando em <code>http://localhost:5500</code></span>
+  </div>
+</div>
+
+</body>
+</html>

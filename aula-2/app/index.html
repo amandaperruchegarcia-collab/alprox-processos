@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alprox Processos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">
+    <span class="logo-mark"><img src="logo-simbolo-branco.png" alt="" class="logo-mark-img"></span>
+    <span class="logo-text">Alprox <strong>Processos</strong></span>
+  </div>
+</header>
+
+<main class="app-main">
+
+  <section id="tela-dashboard" class="tela ativa">
+    <h1>Dashboard</h1>
+    <p class="subtitulo">Visão geral do escritório e o que precisa de atenção.</p>
+
+    <div id="dash-cards" class="dash-cards"></div>
+
+    <div class="dash-calendario-bloco">
+      <div class="dash-calendario-cabecalho">
+        <button type="button" class="btn-secundario" id="dash-mes-anterior">‹</button>
+        <h2 id="dash-mes-titulo"></h2>
+        <button type="button" class="btn-secundario" id="dash-mes-seguinte">›</button>
+      </div>
+      <div id="dash-calendario-dias" class="dash-calendario-dias"></div>
+      <div id="dash-calendario-grade" class="dash-calendario-grade"></div>
+      <div id="dash-dia-selecionado" class="dash-dia-selecionado"></div>
+    </div>
+  </section>
+
+  <section id="tela-processos" class="tela">
+    <h1>Processos</h1>
+    <p class="subtitulo">Instruções de trabalho organizadas por departamento.</p>
+
+    <div class="toolbar">
+      <input type="search" id="proc-busca" placeholder="Buscar processo pelo nome...">
+      <select id="proc-filtro-depto">
+        <option value="">Todos os departamentos</option>
+      </select>
+      <label class="check-inline">
+        <input type="checkbox" id="proc-mostrar-inativos">
+        Mostrar inativos
+      </label>
+      <button class="btn-primario" id="proc-novo-btn">+ Novo processo</button>
+    </div>
+
+    <form id="proc-form" class="card-form escondido">
+      <input type="hidden" id="proc-id">
+      <div class="campo">
+        <label for="proc-nome">Nome do processo</label>
+        <input type="text" id="proc-nome" required placeholder="Ex: Emissão de DAS pelo eCAC">
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="proc-depto">Departamento</label>
+          <select id="proc-depto" required></select>
+        </div>
+        <div class="campo">
+          <label for="proc-codigo">Código</label>
+          <input type="text" id="proc-codigo" placeholder="Ex: IT-001-ADM">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="proc-drive">Link do Drive</label>
+        <input type="url" id="proc-drive" placeholder="https://drive.google.com/...">
+      </div>
+      <div class="campo">
+        <label for="proc-youtube">Link do YouTube (opcional)</label>
+        <input type="url" id="proc-youtube" placeholder="https://youtube.com/...">
+      </div>
+      <div class="campo">
+        <label for="proc-obs">Observações</label>
+        <textarea id="proc-obs" rows="2" placeholder="Alguma observação sobre este processo..."></textarea>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="proc-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario" id="proc-salvar-btn">Salvar processo</button>
+      </div>
+    </form>
+
+    <div id="proc-lista" class="lista-processos"></div>
+    <p id="proc-vazio" class="placeholder escondido">Nenhum processo cadastrado ainda. Clique em "+ Novo processo" pra começar.</p>
+  </section>
+
+  <section id="tela-fluxos" class="tela">
+    <h1>Fluxos</h1>
+    <p class="subtitulo">Passo a passo de tarefas específicas, com o processo pra consultar em caso de dúvida.</p>
+
+    <div class="toolbar">
+      <input type="search" id="fluxo-busca" placeholder="Buscar fluxo pelo nome...">
+      <button class="btn-primario" id="fluxo-novo-btn">+ Novo fluxo</button>
+    </div>
+
+    <form id="fluxo-form" class="card-form escondido">
+      <div class="campo">
+        <label for="fluxo-nome">Nome do fluxo</label>
+        <input type="text" id="fluxo-nome" required placeholder="Ex: Fechamento mensal">
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="fluxo-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar fluxo</button>
+      </div>
+    </form>
+
+    <div id="fluxo-lista" class="lista-tarefas"></div>
+    <p id="fluxo-vazio" class="placeholder escondido">Nenhum fluxo cadastrado ainda. Clique em "+ Novo fluxo" pra começar.</p>
+  </section>
+
+  <section id="tela-minhas-tarefas" class="tela">
+    <h1>Minhas tarefas</h1>
+    <p class="subtitulo">Checklist pessoal e profissional.</p>
+
+    <div class="toolbar">
+      <button class="btn-primario" id="tarefa-novo-btn">+ Nova tarefa</button>
+    </div>
+
+    <form id="tarefa-form" class="card-form escondido">
+      <input type="hidden" id="tarefa-id">
+      <div class="campo">
+        <label for="tarefa-titulo">Título</label>
+        <input type="text" id="tarefa-titulo" required placeholder="Ex: Enviar guia de impostos do cliente X">
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="tarefa-prazo">Prazo</label>
+          <input type="date" id="tarefa-prazo">
+        </div>
+        <div class="campo">
+          <label for="tarefa-status">Status</label>
+          <select id="tarefa-status">
+            <option value="a_fazer">A fazer</option>
+            <option value="fazendo">Fazendo</option>
+            <option value="feito">Feito</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="tarefa-desc">Descrição</label>
+        <textarea id="tarefa-desc" rows="2" placeholder="Detalhes da tarefa..."></textarea>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="tarefa-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar tarefa</button>
+      </div>
+    </form>
+
+    <div class="colunas-tarefas">
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">A fazer</h2>
+        <div id="tarefa-lista-a_fazer" class="lista-tarefas"></div>
+      </div>
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">Fazendo</h2>
+        <div id="tarefa-lista-fazendo" class="lista-tarefas"></div>
+      </div>
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">Feito</h2>
+        <div id="tarefa-lista-feito" class="lista-tarefas"></div>
+      </div>
+    </div>
+    <p id="tarefa-vazio" class="placeholder escondido">Nenhuma tarefa cadastrada ainda. Clique em "+ Nova tarefa" pra começar.</p>
+  </section>
+
+  <section id="tela-tarefas-equipe" class="tela">
+    <h1>Tarefas da equipe</h1>
+    <p class="subtitulo">Atribua e acompanhe as tarefas dos colaboradores.</p>
+
+    <div class="bloco-colaboradores">
+      <div class="bloco-colaboradores-cabecalho">
+        <h2 class="coluna-titulo">Colaboradores</h2>
+        <button class="btn-secundario" id="colab-novo-btn">+ Colaborador</button>
+      </div>
+
+      <form id="colab-form" class="card-form escondido">
+        <input type="hidden" id="colab-id">
+        <div class="campo-linha">
+          <div class="campo">
+            <label for="colab-nome">Nome</label>
+            <input type="text" id="colab-nome" required placeholder="Ex: Juliana Souza">
+          </div>
+          <div class="campo">
+            <label for="colab-cargo">Cargo (opcional)</label>
+            <input type="text" id="colab-cargo" placeholder="Ex: Assistente contábil">
+          </div>
+        </div>
+        <div class="form-acoes">
+          <button type="button" class="btn-secundario" id="colab-cancelar-btn">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar colaborador</button>
+        </div>
+      </form>
+
+      <div id="colab-lista" class="lista-colaboradores"></div>
+      <p id="colab-vazio" class="placeholder escondido">Nenhum colaborador cadastrado ainda. Clique em "+ Colaborador" pra começar.</p>
+    </div>
+
+    <div class="toolbar">
+      <select id="tarefaequipe-filtro-responsavel">
+        <option value="">Todos os responsáveis</option>
+      </select>
+      <button class="btn-primario" id="tarefaequipe-novo-btn">+ Nova tarefa</button>
+    </div>
+
+    <form id="tarefaequipe-form" class="card-form escondido">
+      <input type="hidden" id="tarefaequipe-id">
+      <div class="campo">
+        <label for="tarefaequipe-titulo">Título</label>
+        <input type="text" id="tarefaequipe-titulo" required placeholder="Ex: Conferir folha de pagamento do cliente Y">
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="tarefaequipe-responsavel">Responsável</label>
+          <select id="tarefaequipe-responsavel" required></select>
+        </div>
+        <div class="campo">
+          <label for="tarefaequipe-prazo">Prazo</label>
+          <input type="date" id="tarefaequipe-prazo">
+        </div>
+        <div class="campo">
+          <label for="tarefaequipe-status">Status</label>
+          <select id="tarefaequipe-status">
+            <option value="a_fazer">A fazer</option>
+            <option value="fazendo">Fazendo</option>
+            <option value="feito">Feito</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="tarefaequipe-desc">Descrição</label>
+        <textarea id="tarefaequipe-desc" rows="2" placeholder="Detalhes da tarefa..."></textarea>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="tarefaequipe-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar tarefa</button>
+      </div>
+    </form>
+
+    <div class="colunas-tarefas">
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">A fazer</h2>
+        <div id="tarefaequipe-lista-a_fazer" class="lista-tarefas"></div>
+      </div>
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">Fazendo</h2>
+        <div id="tarefaequipe-lista-fazendo" class="lista-tarefas"></div>
+      </div>
+      <div class="coluna-tarefas">
+        <h2 class="coluna-titulo">Feito</h2>
+        <div id="tarefaequipe-lista-feito" class="lista-tarefas"></div>
+      </div>
+    </div>
+    <p id="tarefaequipe-vazio" class="placeholder escondido">Nenhuma tarefa cadastrada ainda.</p>
+  </section>
+
+  <section id="tela-prazos" class="tela">
+    <h1>Prazos</h1>
+    <p class="subtitulo">Vencimentos e datas importantes.</p>
+
+    <div class="toolbar">
+      <label class="check-inline">
+        <input type="checkbox" id="prazo-mostrar-cumpridos">
+        Mostrar cumpridos
+      </label>
+      <button class="btn-primario" id="prazo-novo-btn">+ Novo prazo</button>
+    </div>
+
+    <form id="prazo-form" class="card-form escondido">
+      <input type="hidden" id="prazo-id">
+      <div class="campo">
+        <label for="prazo-titulo">Título</label>
+        <input type="text" id="prazo-titulo" required placeholder="Ex: Entrega da DCTFWeb">
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="prazo-cliente">Cliente (opcional)</label>
+          <select id="prazo-cliente" data-select-cliente>
+            <option value="">Sem cliente definido</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="prazo-vencimento">Data de vencimento</label>
+          <input type="date" id="prazo-vencimento" required>
+        </div>
+        <div class="campo">
+          <label for="prazo-responsavel">Responsável (opcional)</label>
+          <select id="prazo-responsavel">
+            <option value="">Sem responsável definido</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="prazo-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar prazo</button>
+      </div>
+    </form>
+
+    <div id="prazo-lista" class="lista-tarefas"></div>
+    <p id="prazo-vazio" class="placeholder escondido">Nenhum prazo cadastrado ainda. Clique em "+ Novo prazo" pra começar.</p>
+  </section>
+
+  <section id="tela-certidoes" class="tela">
+    <h1>Certidões negativas</h1>
+    <p class="subtitulo">Controle de validade das certidões.</p>
+
+    <div class="toolbar">
+      <input type="search" id="certidao-busca" placeholder="Buscar por cliente ou tipo...">
+      <button class="btn-primario" id="certidao-novo-btn">+ Nova certidão</button>
+    </div>
+
+    <form id="certidao-form" class="card-form escondido">
+      <input type="hidden" id="certidao-id">
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="certidao-cliente">Cliente</label>
+          <select id="certidao-cliente" data-select-cliente required>
+            <option value="" disabled selected>Selecione um cliente</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="certidao-tipo">Tipo de certidão</label>
+          <input type="text" id="certidao-tipo" required placeholder="Ex: CND Federal">
+        </div>
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="certidao-emissao">Data de emissão</label>
+          <input type="date" id="certidao-emissao">
+        </div>
+        <div class="campo">
+          <label for="certidao-validade">Data de validade</label>
+          <input type="date" id="certidao-validade" required>
+        </div>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="certidao-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar certidão</button>
+      </div>
+    </form>
+
+    <div id="certidao-lista" class="lista-tarefas"></div>
+    <p id="certidao-vazio" class="placeholder escondido">Nenhuma certidão cadastrada ainda. Clique em "+ Nova certidão" pra começar.</p>
+  </section>
+
+  <section id="tela-certificados" class="tela">
+    <h1>Certificados digitais</h1>
+    <p class="subtitulo">Controle de validade dos certificados.</p>
+
+    <div class="toolbar">
+      <input type="search" id="certificado-busca" placeholder="Buscar por cliente...">
+      <button class="btn-primario" id="certificado-novo-btn">+ Novo certificado</button>
+    </div>
+
+    <form id="certificado-form" class="card-form escondido">
+      <input type="hidden" id="certificado-id">
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="certificado-cliente">Cliente</label>
+          <select id="certificado-cliente" data-select-cliente required>
+            <option value="" disabled selected>Selecione um cliente</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="certificado-tipo">Tipo</label>
+          <select id="certificado-tipo">
+            <option value="e-CNPJ">e-CNPJ</option>
+            <option value="e-CPF">e-CPF</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="certificado-emissao">Data de emissão</label>
+          <input type="date" id="certificado-emissao">
+        </div>
+        <div class="campo">
+          <label for="certificado-validade">Data de validade</label>
+          <input type="date" id="certificado-validade" required>
+        </div>
+        <div class="campo">
+          <label for="certificado-responsavel">Responsável (opcional)</label>
+          <select id="certificado-responsavel">
+            <option value="">Sem responsável definido</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="certificado-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar certificado</button>
+      </div>
+    </form>
+
+    <div id="certificado-lista" class="lista-tarefas"></div>
+    <p id="certificado-vazio" class="placeholder escondido">Nenhum certificado cadastrado ainda. Clique em "+ Novo certificado" pra começar.</p>
+  </section>
+
+  <section id="tela-clientes" class="tela">
+    <h1>Clientes</h1>
+    <p class="subtitulo">Cadastro das empresas clientes.</p>
+
+    <div class="toolbar">
+      <input type="search" id="cliente-busca" placeholder="Buscar cliente pelo nome...">
+      <button class="btn-primario" id="cliente-novo-btn">+ Novo cliente</button>
+    </div>
+
+    <form id="cliente-form" class="card-form escondido">
+      <input type="hidden" id="cliente-id">
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="cliente-nome">Nome da empresa</label>
+          <input type="text" id="cliente-nome" required placeholder="Ex: Padaria Bom Pão">
+        </div>
+        <div class="campo">
+          <label for="cliente-cnpj">CNPJ</label>
+          <input type="text" id="cliente-cnpj" placeholder="00.000.000/0001-00">
+        </div>
+      </div>
+      <div class="campo-linha">
+        <div class="campo">
+          <label for="cliente-contato">Contato</label>
+          <input type="text" id="cliente-contato" placeholder="Telefone, e-mail...">
+        </div>
+        <div class="campo">
+          <label for="cliente-responsavel">Responsável (opcional)</label>
+          <select id="cliente-responsavel">
+            <option value="">Sem responsável definido</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="cliente-obs">Observações</label>
+        <textarea id="cliente-obs" rows="2" placeholder="Alguma observação sobre este cliente..."></textarea>
+      </div>
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" id="cliente-cancelar-btn">Cancelar</button>
+        <button type="submit" class="btn-primario">Salvar cliente</button>
+      </div>
+    </form>
+
+    <div id="cliente-lista" class="lista-tarefas"></div>
+    <p id="cliente-vazio" class="placeholder escondido">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" pra começar.</p>
+  </section>
+
+</main>
+
+<nav class="app-nav">
+  <button class="nav-item ativo" data-tela="tela-dashboard">
+    <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+  </button>
+  <button class="nav-item" data-tela="tela-processos">
+    <span class="nav-icon">📋</span><span class="nav-label">Processos</span>
+  </button>
+  <button class="nav-item" data-tela="tela-fluxos">
+    <span class="nav-icon">🔀</span><span class="nav-label">Fluxos</span>
+  </button>
+  <button class="nav-item" data-tela="tela-minhas-tarefas">
+    <span class="nav-icon">✅</span><span class="nav-label">Minhas tarefas</span>
+  </button>
+  <button class="nav-item" data-tela="tela-tarefas-equipe">
+    <span class="nav-icon">👥</span><span class="nav-label">Equipe</span>
+  </button>
+  <button class="nav-item" data-tela="tela-prazos">
+    <span class="nav-icon">⏰</span><span class="nav-label">Prazos</span>
+  </button>
+  <button class="nav-item" data-tela="tela-certidoes">
+    <span class="nav-icon">📄</span><span class="nav-label">Certidões</span>
+  </button>
+  <button class="nav-item" data-tela="tela-certificados">
+    <span class="nav-icon">🔐</span><span class="nav-label">Certificados</span>
+  </button>
+  <button class="nav-item" data-tela="tela-clientes">
+    <span class="nav-icon">🏢</span><span class="nav-label">Clientes</span>
+  </button>
+</nav>
+
+<script src="app.js?v=2"></script>
+<script src="processos.js?v=2"></script>
+<script src="minhas-tarefas.js?v=2"></script>
+<script src="tarefas-equipe.js?v=2"></script>
+<script src="clientes.js?v=2"></script>
+<script src="prazos.js?v=2"></script>
+<script src="certidoes.js?v=2"></script>
+<script src="certificados.js?v=2"></script>
+<script src="fluxos.js?v=2"></script>
+<script src="dashboard.js?v=2"></script>
+</body>
+</html>
