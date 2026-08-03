@@ -1,5 +1,7 @@
+// Importar configuração do Supabase
+import { supabase, usuario_id } from './supabase-config.js';
+
 const CHAVE_STORAGE_COLABORADORES = 'alprox_colaboradores';
-const CHAVE_STORAGE_TAREFAS_EQUIPE = 'alprox_tarefas_equipe';
 
 function carregarColaboradores() {
   const dados = localStorage.getItem(CHAVE_STORAGE_COLABORADORES);
@@ -8,15 +10,6 @@ function carregarColaboradores() {
 
 function salvarColaboradores(lista) {
   localStorage.setItem(CHAVE_STORAGE_COLABORADORES, JSON.stringify(lista));
-}
-
-function carregarTarefasEquipe() {
-  const dados = localStorage.getItem(CHAVE_STORAGE_TAREFAS_EQUIPE);
-  return dados ? JSON.parse(dados) : [];
-}
-
-function salvarTarefasEquipe(lista) {
-  localStorage.setItem(CHAVE_STORAGE_TAREFAS_EQUIPE, JSON.stringify(lista));
 }
 
 function listarColaboradoresAtuais() {
@@ -30,8 +23,126 @@ function nomeResponsavelPrazo(responsavelId) {
   return colab ? colab.nome : null;
 }
 
+// ===== FUNÇÕES DE SUPABASE PARA TAREFAS_EQUIPE =====
+
+/**
+ * Carrega tarefas da equipe do Supabase
+ * Lógica especial: usuário vê tarefas onde criado_por = usuario_id OR atribuido_para = usuario_id
+ * @param {string|null} filtroResponsavel - ID do responsável para filtrar (opcional)
+ * @returns {Promise<Array>} Lista de tarefas
+ */
+async function carregarTarefasEquipe(filtroResponsavel = null) {
+  try {
+    let query = supabase
+      .from('tarefas_equipe')
+      .select('*')
+      .or(`criado_por.eq.${usuario_id},atribuido_para.eq.${usuario_id}`);
+
+    // Se há filtro por responsável, adiciona condição adicional
+    if (filtroResponsavel) {
+      query = query.eq('atribuido_para', filtroResponsavel);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erro ao carregar tarefas da equipe:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erro ao carregar tarefas da equipe:', error);
+    return [];
+  }
+}
+
+/**
+ * Salva uma nova tarefa da equipe no Supabase
+ * @param {Object} tarefa - Objeto com titulo, responsavelId, prazo, status, descricao
+ * @returns {Promise<void>}
+ */
+async function salvarTarefaEquipe(tarefa) {
+  try {
+    const { error } = await supabase
+      .from('tarefas_equipe')
+      .insert({
+        criado_por: usuario_id,
+        atribuido_para: tarefa.responsavelId,
+        titulo: tarefa.titulo,
+        descricao: tarefa.descricao || '',
+        prazo: tarefa.prazo || null,
+        status: tarefa.status || 'a-fazer'
+      });
+
+    if (error) {
+      console.error('Erro ao salvar tarefa da equipe:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao salvar tarefa da equipe:', error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza uma tarefa da equipe no Supabase
+ * Validação de segurança: só permite atualizar tarefas que o usuário criou
+ * @param {string} id - ID da tarefa
+ * @param {Object} tarefa - Objeto com campos a atualizar
+ * @returns {Promise<void>}
+ */
+async function atualizarTarefaEquipe(id, tarefa) {
+  try {
+    const { error } = await supabase
+      .from('tarefas_equipe')
+      .update({
+        titulo: tarefa.titulo,
+        atribuido_para: tarefa.responsavelId,
+        prazo: tarefa.prazo || null,
+        status: tarefa.status,
+        descricao: tarefa.descricao || '',
+        atualizado_em: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('criado_por', usuario_id);  // Validação: só edita se criou
+
+    if (error) {
+      console.error('Erro ao atualizar tarefa da equipe:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar tarefa da equipe:', error);
+    throw error;
+  }
+}
+
+/**
+ * Deleta uma tarefa da equipe no Supabase
+ * Validação de segurança: só permite deletar tarefas que o usuário criou
+ * @param {string} id - ID da tarefa
+ * @returns {Promise<void>}
+ */
+async function deletarTarefaEquipe(id) {
+  try {
+    const { error } = await supabase
+      .from('tarefas_equipe')
+      .delete()
+      .eq('id', id)
+      .eq('criado_por', usuario_id);  // Validação: só deleta se criou
+
+    if (error) {
+      console.error('Erro ao deletar tarefa da equipe:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao deletar tarefa da equipe:', error);
+    throw error;
+  }
+}
+
 let colaboradores = carregarColaboradores();
-let tarefasEquipe = carregarTarefasEquipe();
+let tarefasEquipe = [];  // Será carregado do Supabase
 
 // ---------- Elementos: colaboradores ----------
 
@@ -54,7 +165,7 @@ colabCancelarBtn.addEventListener('click', () => {
   colabForm.reset();
 });
 
-colabForm.addEventListener('submit', (evento) => {
+colabForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
   colaboradores.push({
     id: Date.now().toString(),
@@ -65,16 +176,16 @@ colabForm.addEventListener('submit', (evento) => {
   colabForm.classList.add('escondido');
   colabForm.reset();
   renderizarColaboradores();
-  renderizarTarefasEquipe();
+  await renderizarTarefasEquipe();
 });
 
-function excluirColaborador(id) {
+async function excluirColaborador(id) {
   const confirmou = confirm('Excluir este colaborador? As tarefas já atribuídas a ele continuam na lista, só ficam sem responsável.');
   if (!confirmou) return;
   colaboradores = colaboradores.filter(c => c.id !== id);
   salvarColaboradores(colaboradores);
   renderizarColaboradores();
-  renderizarTarefasEquipe();
+  await renderizarTarefasEquipe();
 }
 
 function renderizarColaboradores() {
@@ -170,47 +281,68 @@ function fecharTarefaEquipeForm() {
 tarefaEquipeNovoBtn.addEventListener('click', abrirTarefaEquipeFormNovo);
 tarefaEquipeCancelarBtn.addEventListener('click', fecharTarefaEquipeForm);
 
-tarefaEquipeForm.addEventListener('submit', (evento) => {
+tarefaEquipeForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
   const id = tarefaEquipeIdEl.value;
+  const dadosTarefa = {
+    titulo: tarefaEquipeTituloEl.value.trim(),
+    responsavelId: tarefaEquipeResponsavelEl.value,
+    prazo: tarefaEquipePrazoEl.value,
+    status: tarefaEquipeStatusEl.value,
+    descricao: tarefaEquipeDescEl.value.trim()
+  };
 
-  if (id) {
-    const tarefa = tarefasEquipe.find(t => t.id === id);
-    tarefa.titulo = tarefaEquipeTituloEl.value.trim();
-    tarefa.responsavelId = tarefaEquipeResponsavelEl.value;
-    tarefa.prazo = tarefaEquipePrazoEl.value;
-    tarefa.status = tarefaEquipeStatusEl.value;
-    tarefa.descricao = tarefaEquipeDescEl.value.trim();
-  } else {
-    tarefasEquipe.push({
-      id: Date.now().toString(),
-      titulo: tarefaEquipeTituloEl.value.trim(),
-      responsavelId: tarefaEquipeResponsavelEl.value,
-      prazo: tarefaEquipePrazoEl.value,
-      status: tarefaEquipeStatusEl.value,
-      descricao: tarefaEquipeDescEl.value.trim()
-    });
+  try {
+    if (id) {
+      // Editar tarefa existente
+      await atualizarTarefaEquipe(id, dadosTarefa);
+    } else {
+      // Criar nova tarefa
+      await salvarTarefaEquipe(dadosTarefa);
+    }
+
+    fecharTarefaEquipeForm();
+    await renderizarTarefasEquipe();
+  } catch (error) {
+    alert('Erro ao salvar tarefa: ' + error.message);
   }
-
-  salvarTarefasEquipe(tarefasEquipe);
-  fecharTarefaEquipeForm();
-  renderizarTarefasEquipe();
 });
 
-function mudarStatusTarefaEquipe(id, novoStatus) {
-  const tarefa = tarefasEquipe.find(t => t.id === id);
-  tarefa.status = novoStatus;
-  salvarTarefasEquipe(tarefasEquipe);
-  renderizarTarefasEquipe();
+async function mudarStatusTarefaEquipe(id, novoStatus) {
+  try {
+    // Encontra a tarefa local para pegar dados necessários
+    const tarefa = tarefasEquipe.find(t => t.id === id);
+    if (!tarefa) return;
+
+    // Atualiza no Supabase
+    await atualizarTarefaEquipe(id, {
+      titulo: tarefa.titulo,
+      responsavelId: tarefa.atribuido_para,
+      prazo: tarefa.prazo,
+      status: novoStatus,
+      descricao: tarefa.descricao
+    });
+
+    // Recarrega lista
+    await renderizarTarefasEquipe();
+  } catch (error) {
+    console.error('Erro ao mudar status:', error);
+    alert('Erro ao atualizar status da tarefa');
+  }
 }
 
-function excluirTarefaEquipe(id) {
+async function excluirTarefaEquipe(id) {
   const confirmou = confirm('Tem certeza que quer excluir esta tarefa?');
   if (!confirmou) return;
-  tarefasEquipe = tarefasEquipe.filter(t => t.id !== id);
-  salvarTarefasEquipe(tarefasEquipe);
-  renderizarTarefasEquipe();
+
+  try {
+    await deletarTarefaEquipe(id);
+    await renderizarTarefasEquipe();
+  } catch (error) {
+    console.error('Erro ao excluir tarefa:', error);
+    alert('Erro ao excluir tarefa');
+  }
 }
 
 function nomeResponsavel(responsavelId) {
@@ -250,26 +382,49 @@ function criarTarefaEquipeCard(tarefa) {
   return card;
 }
 
-function renderizarTarefasEquipe() {
-  Object.values(listasEquipePorStatus).forEach(lista => lista.innerHTML = '');
+async function renderizarTarefasEquipe() {
+  try {
+    // Limpar listas
+    Object.values(listasEquipePorStatus).forEach(lista => lista.innerHTML = '');
 
-  const filtroResponsavel = tarefaEquipeFiltroResponsavelEl.value;
+    const filtroResponsavel = tarefaEquipeFiltroResponsavelEl.value;
 
-  const filtradas = tarefasEquipe.filter(t => !filtroResponsavel || t.responsavelId === filtroResponsavel);
+    // Carregar tarefas do Supabase com filtro opcional
+    tarefasEquipe = await carregarTarefasEquipe(filtroResponsavel || null);
 
-  filtradas
-    .slice()
-    .sort((a, b) => (a.prazo || '9999').localeCompare(b.prazo || '9999'))
-    .forEach(tarefa => {
-      listasEquipePorStatus[tarefa.status].appendChild(criarTarefaEquipeCard(tarefa));
-    });
+    // Renderizar as tarefas
+    tarefasEquipe
+      .slice()
+      .sort((a, b) => (a.prazo || '9999').localeCompare(b.prazo || '9999'))
+      .forEach(tarefa => {
+        // Converter campos do Supabase para o formato esperado pela função de renderização
+        const tarefaFormatada = {
+          id: tarefa.id,
+          titulo: tarefa.titulo,
+          descricao: tarefa.descricao,
+          prazo: tarefa.prazo,
+          status: tarefa.status,
+          responsavelId: tarefa.atribuido_para,  // Campo do Supabase é atribuido_para
+          atribuido_para: tarefa.atribuido_para  // Mantém também com nome original
+        };
 
-  const vazio = filtradas.length === 0;
-  tarefaEquipeVazioEl.classList.toggle('escondido', !vazio);
-  tarefaEquipeVazioEl.textContent = tarefasEquipe.length === 0
-    ? 'Nenhuma tarefa cadastrada ainda.'
-    : 'Nenhuma tarefa encontrada com esse filtro.';
-  colunasTarefasEquipeEl.classList.toggle('escondido', vazio);
+        if (listasEquipePorStatus[tarefaFormatada.status]) {
+          listasEquipePorStatus[tarefaFormatada.status].appendChild(criarTarefaEquipeCard(tarefaFormatada));
+        }
+      });
+
+    // Atualizar mensagem de vazio
+    const vazio = tarefasEquipe.length === 0;
+    tarefaEquipeVazioEl.classList.toggle('escondido', !vazio);
+    tarefaEquipeVazioEl.textContent = tarefasEquipe.length === 0
+      ? 'Nenhuma tarefa cadastrada ainda.'
+      : 'Nenhuma tarefa encontrada com esse filtro.';
+    colunasTarefasEquipeEl.classList.toggle('escondido', vazio);
+  } catch (error) {
+    console.error('Erro ao renderizar tarefas da equipe:', error);
+    tarefaEquipeVazioEl.textContent = 'Erro ao carregar tarefas. Verifique a conexão.';
+    tarefaEquipeVazioEl.classList.remove('escondido');
+  }
 }
 
 tarefaEquipeFiltroResponsavelEl.addEventListener('change', renderizarTarefasEquipe);
@@ -277,4 +432,22 @@ tarefaEquipeFiltroResponsavelEl.addEventListener('change', renderizarTarefasEqui
 // ---------- Início ----------
 
 renderizarColaboradores();
-renderizarTarefasEquipe();
+
+// Carregar tarefas da equipe do Supabase quando a página inicializa
+document.addEventListener('DOMContentLoaded', async () => {
+  // Aguarda um pouco para garantir que usuario_id foi inicializado
+  const tentarCarregar = setInterval(async () => {
+    if (usuario_id) {
+      clearInterval(tentarCarregar);
+      await renderizarTarefasEquipe();
+    }
+  }, 100);
+
+  // Timeout: se usuario_id não foi inicializado em 5 segundos, parar de tentar
+  setTimeout(() => clearInterval(tentarCarregar), 5000);
+});
+
+// Recarregar tarefas quando usuário faz login
+window.addEventListener('usuario-logado', async () => {
+  await renderizarTarefasEquipe();
+});
