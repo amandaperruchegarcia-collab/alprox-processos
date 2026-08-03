@@ -1,0 +1,26 @@
+{
+  "name": "Alprox Processos",
+  "short_name": "Alprox",
+  "description": "App de gerenciamento de processos e instruções do escritório ALPROX",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2d7a4a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "logo-simbolo-verde.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-simbolo-verde.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity"]
+}

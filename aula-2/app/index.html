@@ -2,27 +2,66 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="App de gerenciamento de processos e instruções do escritório ALPROX">
+<meta name="theme-color" content="#2d7a4a">
 <title>Alprox Processos</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="logo-simbolo-verde.png">
+<link rel="apple-touch-icon" href="logo-simbolo-verde.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Alprox">
 <script type="module">
-  import { supabase, inicializarSessao, usuario_id, usuario_nome } from './supabase-config.js';
+  import { supabase, inicializarSessao } from './supabase-config.js';
   window.supabase = supabase;
   window.inicializarSessao = inicializarSessao;
 </script>
 </head>
 <body>
 
-<header class="app-header">
+<header class="app-header" id="app-header">
   <div class="logo">
     <span class="logo-mark"><img src="logo-simbolo-branco.png" alt="" class="logo-mark-img"></span>
     <span class="logo-text">Alprox <strong>Processos</strong></span>
   </div>
+  <button type="button" class="btn-secundario" id="logout-btn" style="display: none; margin-left: auto;">
+    Sair
+  </button>
 </header>
 
 <main class="app-main">
 
-  <section id="tela-dashboard" class="tela ativa">
+  <section id="tela-login" class="tela ativa">
+    <div class="login-container">
+      <div class="login-box">
+        <div class="login-logo" style="text-align: center; margin-bottom: 2rem;">
+          <img src="logo-simbolo-verde.png" alt="Alprox" style="width: 60px; height: 60px;">
+          <p style="margin: 1rem 0 0; font-size: 1.1rem; color: var(--verde-escuro); font-weight: 600;">
+            Alprox <strong style="color: var(--verde);">Processos</strong>
+          </p>
+        </div>
+
+        <form id="login-form">
+          <div class="campo">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required placeholder="seu@email.com">
+          </div>
+          <div class="campo">
+            <label for="login-senha">Senha</label>
+            <input type="password" id="login-senha" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn-primario" style="width: 100%; margin-top: 1rem;">
+            Entrar
+          </button>
+          <p id="login-erro" class="erro" style="margin-top: 1rem; display: none; text-align: center;"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="tela-dashboard" class="tela">
     <h1>Dashboard</h1>
     <p class="subtitulo">Visão geral do escritório e o que precisa de atenção.</p>
 
@@ -483,7 +522,8 @@
   </button>
 </nav>
 
-<script src="app.js?v=2"></script>
+<script type="module" src="login.js?v=2"></script>
+<script type="module" src="app.js?v=2"></script>
 <script src="processos.js?v=2"></script>
 <script src="minhas-tarefas.js?v=2"></script>
 <script src="tarefas-equipe.js?v=2"></script>
