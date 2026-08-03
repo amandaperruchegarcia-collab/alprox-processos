@@ -34,7 +34,7 @@ function nomeResponsavelPrazo(responsavelId) {
 async function carregarTarefasEquipe(filtroResponsavel = null) {
   try {
     let query = supabase
-      .from('tarefas_equipe')
+      .from('alprox_2s_equipe')
       .select('*')
       .or(`criado_por.eq.${usuario_id},atribuido_para.eq.${usuario_id}`);
 
@@ -65,7 +65,7 @@ async function carregarTarefasEquipe(filtroResponsavel = null) {
 async function salvarTarefaEquipe(tarefa) {
   try {
     const { error } = await supabase
-      .from('tarefas_equipe')
+      .from('alprox_2s_equipe')
       .insert({
         criado_por: usuario_id,
         atribuido_para: tarefa.responsavelId,
@@ -95,7 +95,7 @@ async function salvarTarefaEquipe(tarefa) {
 async function atualizarTarefaEquipe(id, tarefa) {
   try {
     const { error } = await supabase
-      .from('tarefas_equipe')
+      .from('alprox_2s_equipe')
       .update({
         titulo: tarefa.titulo,
         atribuido_para: tarefa.responsavelId,
@@ -126,7 +126,7 @@ async function atualizarTarefaEquipe(id, tarefa) {
 async function deletarTarefaEquipe(id) {
   try {
     const { error } = await supabase
-      .from('tarefas_equipe')
+      .from('alprox_2s_equipe')
       .delete()
       .eq('id', id)
       .eq('criado_por', usuario_id);  // Validação: só deleta se criou
