@@ -1,16 +1,133 @@
-const CHAVE_STORAGE_CERTIDOES = 'alprox_certidoes';
 const DIAS_ALERTA_VENCIMENTO = 30;
 
-function carregarCertidoes() {
-  const dados = localStorage.getItem(CHAVE_STORAGE_CERTIDOES);
-  return dados ? JSON.parse(dados) : [];
+// Variable para armazenar certidões em memória (carregadas do Supabase)
+let certidoes = [];
+
+/**
+ * Calcula o status de uma certidão baseado na data de validade
+ * @param {string} dataValidade - data em formato YYYY-MM-DD
+ * @returns {string} 'vencida' | 'válida'
+ */
+function calcularStatusCertidao(dataValidade) {
+  const hoje = new Date().toISOString().split('T')[0];
+  return dataValidade < hoje ? 'vencida' : 'válida';
 }
 
-function salvarCertidoes(lista) {
-  localStorage.setItem(CHAVE_STORAGE_CERTIDOES, JSON.stringify(lista));
+/**
+ * Carrega certidões do Supabase
+ * @returns {Promise<Array>} Array de certidões
+ */
+async function carregarCertidoes() {
+  try {
+    const { data, error } = await window.supabase
+      .from('certidoes')
+      .select('*')
+      .eq('usuario_id', window.usuario_id);
+
+    if (error) {
+      console.error('Erro ao carregar certidões:', error);
+      return [];
+    }
+
+    // Enriquecer com status calculado
+    const certidoesComStatus = (data || []).map(c => ({
+      ...c,
+      status: calcularStatusCertidao(c.data_validade)
+    }));
+
+    return certidoesComStatus;
+  } catch (error) {
+    console.error('Erro ao carregar certidões:', error);
+    return [];
+  }
 }
 
-let certidoes = carregarCertidoes();
+/**
+ * Salva uma nova certidão no Supabase
+ * @param {Object} certidao - Dados da certidão
+ * @returns {Promise<Object>} Certidão criada
+ */
+async function salvarCertidao(certidao) {
+  try {
+    const status = calcularStatusCertidao(certidao.data_validade);
+
+    const { data, error } = await window.supabase
+      .from('certidoes')
+      .insert({
+        usuario_id: window.usuario_id,
+        cliente_id: certidao.cliente_id || null,
+        tipo: certidao.tipo,
+        data_emissao: certidao.data_emissao,
+        data_validade: certidao.data_validade,
+        status: status
+      })
+      .select();
+
+    if (error) {
+      console.error('Erro ao salvar certidão:', error);
+      throw error;
+    }
+
+    return data[0];
+  } catch (error) {
+    console.error('Erro ao salvar certidão:', error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza uma certidão existente
+ * @param {string} id - ID da certidão
+ * @param {Object} certidao - Dados da certidão
+ * @returns {Promise<void>}
+ */
+async function atualizarCertidao(id, certidao) {
+  try {
+    const status = calcularStatusCertidao(certidao.data_validade);
+
+    const { error } = await window.supabase
+      .from('certidoes')
+      .update({
+        cliente_id: certidao.cliente_id || null,
+        tipo: certidao.tipo,
+        data_emissao: certidao.data_emissao,
+        data_validade: certidao.data_validade,
+        status: status,
+        atualizado_em: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao atualizar certidão:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar certidão:', error);
+    throw error;
+  }
+}
+
+/**
+ * Deleta uma certidão
+ * @param {string} id - ID da certidão
+ * @returns {Promise<void>}
+ */
+async function deletarCertidao(id) {
+  try {
+    const { error } = await window.supabase
+      .from('certidoes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao deletar certidão:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao deletar certidão:', error);
+    throw error;
+  }
+}
 
 // ---------- Elementos ----------
 
@@ -40,10 +157,10 @@ function abrirCertidaoFormNovo() {
 function abrirCertidaoFormEdicao(certidao) {
   atualizarTodosSelectsDeCliente();
   certidaoIdEl.value = certidao.id;
-  certidaoClienteEl.value = certidao.clienteId;
+  certidaoClienteEl.value = certidao.cliente_id || '';
   certidaoTipoEl.value = certidao.tipo;
-  certidaoEmissaoEl.value = certidao.emissao || '';
-  certidaoValidadeEl.value = certidao.validade;
+  certidaoEmissaoEl.value = certidao.data_emissao || '';
+  certidaoValidadeEl.value = certidao.data_validade;
   certidaoForm.classList.remove('escondido');
   certidaoClienteEl.focus();
 }
@@ -58,40 +175,47 @@ certidaoCancelarBtn.addEventListener('click', fecharCertidaoForm);
 
 // ---------- Salvar (criar ou editar) ----------
 
-certidaoForm.addEventListener('submit', (evento) => {
+certidaoForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
-  const id = certidaoIdEl.value;
-
-  if (id) {
-    const certidao = certidoes.find(c => c.id === id);
-    certidao.clienteId = certidaoClienteEl.value;
-    certidao.tipo = certidaoTipoEl.value.trim();
-    certidao.emissao = certidaoEmissaoEl.value;
-    certidao.validade = certidaoValidadeEl.value;
-  } else {
-    certidoes.push({
-      id: Date.now().toString(),
-      clienteId: certidaoClienteEl.value,
+  try {
+    const id = certidaoIdEl.value;
+    const novasCertidoes = {
+      cliente_id: certidaoClienteEl.value || null,
       tipo: certidaoTipoEl.value.trim(),
-      emissao: certidaoEmissaoEl.value,
-      validade: certidaoValidadeEl.value
-    });
-  }
+      data_emissao: certidaoEmissaoEl.value,
+      data_validade: certidaoValidadeEl.value
+    };
 
-  salvarCertidoes(certidoes);
-  fecharCertidaoForm();
-  renderizarCertidoes();
+    if (id) {
+      // Editar
+      await atualizarCertidao(id, novasCertidoes);
+    } else {
+      // Criar
+      await salvarCertidao(novasCertidoes);
+    }
+
+    fecharCertidaoForm();
+    await atualizarListaCertidoes();
+  } catch (error) {
+    console.error('Erro ao salvar certidão:', error);
+    alert('Erro ao salvar certidão. Tente novamente.');
+  }
 });
 
 // ---------- Ações ----------
 
-function excluirCertidao(id) {
+async function excluirCertidaoConfirmado(id) {
   const confirmou = confirm('Tem certeza que quer excluir esta certidão?');
   if (!confirmou) return;
-  certidoes = certidoes.filter(c => c.id !== id);
-  salvarCertidoes(certidoes);
-  renderizarCertidoes();
+
+  try {
+    await deletarCertidao(id);
+    await atualizarListaCertidoes();
+  } catch (error) {
+    console.error('Erro ao excluir certidão:', error);
+    alert('Erro ao excluir certidão. Tente novamente.');
+  }
 }
 
 // ---------- Cálculo de status ----------
@@ -114,9 +238,15 @@ const rotuloSituacao = {
 // ---------- Renderização ----------
 
 function criarCertidaoCard(certidao) {
-  const situacao = situacaoValidade(certidao.validade);
+  const situacao = situacaoValidade(certidao.data_validade);
   const card = document.createElement('div');
-  card.className = 'processo-card' + (situacao === 'vencida' ? ' inativo' : '');
+
+  // Aplicar classe .alerta-vencimento para vencidas (cor dourada)
+  const classes = ['processo-card'];
+  if (situacao === 'vencida') {
+    classes.push('inativo', 'alerta-vencimento');
+  }
+  card.className = classes.join(' ');
 
   const classeBadge = situacao === 'vencida' ? 'badge-vencida' : situacao === 'alerta' ? 'badge-alerta' : '';
 
@@ -126,9 +256,9 @@ function criarCertidaoCard(certidao) {
       <span class="badge ${classeBadge}">${rotuloSituacao[situacao]}</span>
     </div>
     <div class="processo-meta">
-      <span class="tarefa-cliente">🏢 ${escaparHtml(nomeCliente(certidao.clienteId) || 'Cliente removido')}</span>
-      ${certidao.emissao ? `<span>Emitida em ${formatarData(certidao.emissao)}</span>` : ''}
-      <span>Validade: ${formatarData(certidao.validade)}</span>
+      <span class="tarefa-cliente">🏢 ${escaparHtml(nomeCliente(certidao.cliente_id) || 'Cliente removido')}</span>
+      ${certidao.data_emissao ? `<span>Emitida em ${formatarData(certidao.data_emissao)}</span>` : ''}
+      <span>Validade: ${formatarData(certidao.data_validade)}</span>
     </div>
     <div class="processo-acoes">
       <button class="btn-link" data-acao="editar">Editar</button>
@@ -137,7 +267,7 @@ function criarCertidaoCard(certidao) {
   `;
 
   card.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirCertidaoFormEdicao(certidao));
-  card.querySelector('[data-acao="excluir"]').addEventListener('click', () => excluirCertidao(certidao.id));
+  card.querySelector('[data-acao="excluir"]').addEventListener('click', () => excluirCertidaoConfirmado(certidao.id));
 
   return card;
 }
@@ -147,7 +277,7 @@ function renderizarCertidoes() {
 
   const filtradas = certidoes.filter(c => {
     if (!termoBusca) return true;
-    const nomeDoCliente = (nomeCliente(c.clienteId) || '').toLowerCase();
+    const nomeDoCliente = (nomeCliente(c.cliente_id) || '').toLowerCase();
     return nomeDoCliente.includes(termoBusca) || c.tipo.toLowerCase().includes(termoBusca);
   });
 
@@ -162,13 +292,25 @@ function renderizarCertidoes() {
     certidaoVazioEl.classList.add('escondido');
     filtradas
       .slice()
-      .sort((a, b) => a.validade.localeCompare(b.validade))
+      .sort((a, b) => a.data_validade.localeCompare(b.data_validade))
       .forEach(c => certidaoListaEl.appendChild(criarCertidaoCard(c)));
   }
+}
+
+/**
+ * Atualiza a lista de certidões carregando do Supabase e renderizando
+ */
+async function atualizarListaCertidoes() {
+  certidoes = await carregarCertidoes();
+  renderizarCertidoes();
 }
 
 certidaoBuscaEl.addEventListener('input', renderizarCertidoes);
 
 // ---------- Início ----------
 
-renderizarCertidoes();
+// Carregar certidões ao inicializar
+(async () => {
+  certidoes = await carregarCertidoes();
+  renderizarCertidoes();
+})();
