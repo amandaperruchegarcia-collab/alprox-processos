@@ -1,15 +1,117 @@
-const CHAVE_STORAGE_PRAZOS = 'alprox_prazos';
+// Função para carregar prazos do Supabase
+async function carregarPrazos() {
+  try {
+    if (!window.supabase || !window.usuario_id) {
+      console.error('Supabase não inicializado ou usuário não logado');
+      return [];
+    }
 
-function carregarPrazos() {
-  const dados = localStorage.getItem(CHAVE_STORAGE_PRAZOS);
-  return dados ? JSON.parse(dados) : [];
+    const { data, error } = await window.supabase
+      .from('prazos')
+      .select('*')
+      .eq('usuario_id', window.usuario_id)
+      .order('data_vencimento', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao carregar prazos:', error);
+      return [];
+    }
+
+    // Calcular status automaticamente: marcar como vencido se data < hoje e status = pendente
+    const hoje = new Date().toISOString().split('T')[0];
+    return (data || []).map(p => ({
+      ...p,
+      // Manter o status do banco, mas detectar vencimento
+      _vencido: p.data_vencimento < hoje && p.status === 'pendente'
+    }));
+  } catch (error) {
+    console.error('Erro ao carregar prazos:', error);
+    return [];
+  }
 }
 
-function salvarPrazos(lista) {
-  localStorage.setItem(CHAVE_STORAGE_PRAZOS, JSON.stringify(lista));
+// Função para salvar novo prazo no Supabase
+async function salvarPrazo(prazo) {
+  try {
+    if (!window.supabase || !window.usuario_id) {
+      throw new Error('Supabase não inicializado ou usuário não logado');
+    }
+
+    const { error } = await window.supabase
+      .from('prazos')
+      .insert({
+        usuario_id: window.usuario_id,
+        titulo: prazo.titulo,
+        cliente_id: prazo.clienteId || null,
+        data_vencimento: prazo.vencimento,
+        responsavel_id: prazo.responsavelId || null,
+        status: prazo.status || 'pendente'
+      });
+
+    if (error) {
+      console.error('Erro ao salvar prazo:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao salvar prazo:', error);
+    throw error;
+  }
 }
 
-let prazos = carregarPrazos();
+// Função para atualizar prazo no Supabase
+async function atualizarPrazo(id, prazo) {
+  try {
+    if (!window.supabase) {
+      throw new Error('Supabase não inicializado');
+    }
+
+    const { error } = await window.supabase
+      .from('prazos')
+      .update({
+        titulo: prazo.titulo,
+        cliente_id: prazo.clienteId || null,
+        data_vencimento: prazo.vencimento,
+        responsavel_id: prazo.responsavelId || null,
+        status: prazo.status,
+        atualizado_em: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('usuario_id', window.usuario_id);
+
+    if (error) {
+      console.error('Erro ao atualizar prazo:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar prazo:', error);
+    throw error;
+  }
+}
+
+// Função para deletar prazo no Supabase
+async function deletarPrazo(id) {
+  try {
+    if (!window.supabase) {
+      throw new Error('Supabase não inicializado');
+    }
+
+    const { error } = await window.supabase
+      .from('prazos')
+      .delete()
+      .eq('id', id)
+      .eq('usuario_id', window.usuario_id);
+
+    if (error) {
+      console.error('Erro ao deletar prazo:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao deletar prazo:', error);
+    throw error;
+  }
+}
+
+let prazos = [];
 
 // ---------- Elementos ----------
 
@@ -54,9 +156,9 @@ function abrirPrazoFormEdicao(prazo) {
   atualizarTodosSelectsDeCliente();
   prazoIdEl.value = prazo.id;
   prazoTituloEl.value = prazo.titulo;
-  prazoClienteEl.value = prazo.clienteId || '';
-  prazoVencimentoEl.value = prazo.vencimento;
-  prazoResponsavelEl.value = prazo.responsavelId || '';
+  prazoClienteEl.value = prazo.cliente_id || '';
+  prazoVencimentoEl.value = prazo.data_vencimento;
+  prazoResponsavelEl.value = prazo.responsavel_id || '';
   prazoForm.classList.remove('escondido');
   prazoTituloEl.focus();
 }
@@ -71,48 +173,80 @@ prazoCancelarBtn.addEventListener('click', fecharPrazoForm);
 
 // ---------- Salvar (criar ou editar) ----------
 
-prazoForm.addEventListener('submit', (evento) => {
+prazoForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
-  const id = prazoIdEl.value;
+  try {
+    const id = prazoIdEl.value;
 
-  if (id) {
-    const prazo = prazos.find(p => p.id === id);
-    prazo.titulo = prazoTituloEl.value.trim();
-    prazo.clienteId = prazoClienteEl.value;
-    prazo.vencimento = prazoVencimentoEl.value;
-    prazo.responsavelId = prazoResponsavelEl.value;
-  } else {
-    prazos.push({
-      id: Date.now().toString(),
-      titulo: prazoTituloEl.value.trim(),
-      clienteId: prazoClienteEl.value,
-      vencimento: prazoVencimentoEl.value,
-      responsavelId: prazoResponsavelEl.value,
-      status: 'pendente'
-    });
+    if (id) {
+      // Editar prazo existente
+      const prazo = prazos.find(p => p.id === id);
+      if (prazo) {
+        await atualizarPrazo(id, {
+          titulo: prazoTituloEl.value.trim(),
+          clienteId: prazoClienteEl.value,
+          vencimento: prazoVencimentoEl.value,
+          responsavelId: prazoResponsavelEl.value,
+          status: prazo.status
+        });
+      }
+    } else {
+      // Criar novo prazo
+      await salvarPrazo({
+        titulo: prazoTituloEl.value.trim(),
+        clienteId: prazoClienteEl.value,
+        vencimento: prazoVencimentoEl.value,
+        responsavelId: prazoResponsavelEl.value,
+        status: 'pendente'
+      });
+    }
+
+    fecharPrazoForm();
+    prazos = await carregarPrazos();
+    renderizarPrazos();
+  } catch (error) {
+    console.error('Erro ao salvar prazo:', error);
+    alert('Erro ao salvar prazo. Tente novamente.');
   }
-
-  salvarPrazos(prazos);
-  fecharPrazoForm();
-  renderizarPrazos();
 });
 
 // ---------- Ações ----------
 
-function alternarStatusPrazo(id) {
-  const prazo = prazos.find(p => p.id === id);
-  prazo.status = prazo.status === 'pendente' ? 'cumprido' : 'pendente';
-  salvarPrazos(prazos);
-  renderizarPrazos();
+async function alternarStatusPrazo(id) {
+  try {
+    const prazo = prazos.find(p => p.id === id);
+    if (!prazo) return;
+
+    const novoStatus = prazo.status === 'pendente' ? 'cumprido' : 'pendente';
+    await atualizarPrazo(id, {
+      titulo: prazo.titulo,
+      clienteId: prazo.cliente_id,
+      vencimento: prazo.data_vencimento,
+      responsavelId: prazo.responsavel_id,
+      status: novoStatus
+    });
+
+    prazos = await carregarPrazos();
+    renderizarPrazos();
+  } catch (error) {
+    console.error('Erro ao alterar status do prazo:', error);
+    alert('Erro ao alterar status. Tente novamente.');
+  }
 }
 
-function excluirPrazo(id) {
+async function excluirPrazo(id) {
   const confirmou = confirm('Tem certeza que quer excluir este prazo?');
   if (!confirmou) return;
-  prazos = prazos.filter(p => p.id !== id);
-  salvarPrazos(prazos);
-  renderizarPrazos();
+
+  try {
+    await deletarPrazo(id);
+    prazos = await carregarPrazos();
+    renderizarPrazos();
+  } catch (error) {
+    console.error('Erro ao excluir prazo:', error);
+    alert('Erro ao excluir prazo. Tente novamente.');
+  }
 }
 
 // ---------- Renderização ----------
@@ -120,7 +254,7 @@ function excluirPrazo(id) {
 function prazoEstaAtrasado(prazo) {
   if (prazo.status === 'cumprido') return false;
   const hoje = new Date().toISOString().slice(0, 10);
-  return prazo.vencimento < hoje;
+  return prazo.data_vencimento < hoje;
 }
 
 function criarPrazoCard(prazo) {
@@ -128,8 +262,13 @@ function criarPrazoCard(prazo) {
   const card = document.createElement('div');
   card.className = `tarefa-card status-${prazo.status}` + (atrasado ? ' atrasada' : '');
 
-  const responsavel = nomeResponsavelPrazo(prazo.responsavelId);
-  const cliente = nomeCliente(prazo.clienteId);
+  // Adicionar classe de alerta visual para prazos vencidos
+  if (atrasado) {
+    card.classList.add('alerta-vencimento');
+  }
+
+  const responsavel = nomeResponsavelPrazo(prazo.responsavel_id);
+  const cliente = nomeCliente(prazo.cliente_id);
 
   card.innerHTML = `
     <div class="tarefa-topo">
@@ -139,7 +278,7 @@ function criarPrazoCard(prazo) {
       ${cliente ? `<span class="tarefa-cliente">🏢 ${escaparHtml(cliente)}</span>` : ''}
       ${responsavel ? `<span class="tarefa-responsavel">👤 ${escaparHtml(responsavel)}</span>` : ''}
     </div>
-    <span class="tarefa-prazo ${atrasado ? 'atrasada' : ''}">${atrasado ? '⚠ ' : ''}Vencimento: ${formatarData(prazo.vencimento)}</span>
+    <span class="tarefa-prazo ${atrasado ? 'atrasada' : ''}">${atrasado ? '⚠ ' : ''}Vencimento: ${formatarData(prazo.data_vencimento)}</span>
     <div class="tarefa-acoes">
       <button class="btn-link" data-acao="alternar">${prazo.status === 'pendente' ? 'Marcar como cumprido' : 'Reabrir'}</button>
       <div class="tarefa-acoes-btns">
@@ -149,9 +288,9 @@ function criarPrazoCard(prazo) {
     </div>
   `;
 
-  card.querySelector('[data-acao="alternar"]').addEventListener('click', () => alternarStatusPrazo(prazo.id));
+  card.querySelector('[data-acao="alternar"]').addEventListener('click', async () => await alternarStatusPrazo(prazo.id));
   card.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirPrazoFormEdicao(prazo));
-  card.querySelector('[data-acao="excluir"]').addEventListener('click', () => excluirPrazo(prazo.id));
+  card.querySelector('[data-acao="excluir"]').addEventListener('click', async () => await excluirPrazo(prazo.id));
 
   return card;
 }
@@ -172,7 +311,7 @@ function renderizarPrazos() {
     prazoVazioEl.classList.add('escondido');
     filtrados
       .slice()
-      .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+      .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento))
       .forEach(prazo => prazoListaEl.appendChild(criarPrazoCard(prazo)));
   }
 }
@@ -181,4 +320,15 @@ prazoMostrarCumpridosEl.addEventListener('change', renderizarPrazos);
 
 // ---------- Início ----------
 
-renderizarPrazos();
+// Inicializar carregando dados do Supabase na primeira vez
+async function inicializarPrazos() {
+  prazos = await carregarPrazos();
+  renderizarPrazos();
+}
+
+// Chamar inicialização quando o módulo estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', inicializarPrazos);
+} else {
+  inicializarPrazos();
+}

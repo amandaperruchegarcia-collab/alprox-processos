@@ -1,15 +1,68 @@
-const CHAVE_STORAGE_TAREFAS = 'alprox_minhas_tarefas';
+// Supabase integration for tarefas_pessoais (alprox_s_s_is table)
+async function carregarTarefas() {
+  const { data, error } = await window.supabase
+    .from('alprox_s_s_is')
+    .select('*')
+    .eq('usuario_id', window.usuario_id)
+    .order('prazo', { ascending: true, nullsFirst: false });
 
-function carregarTarefas() {
-  const dados = localStorage.getItem(CHAVE_STORAGE_TAREFAS);
-  return dados ? JSON.parse(dados) : [];
+  if (error) {
+    console.error('Erro ao carregar tarefas:', error);
+    return [];
+  }
+  return data || [];
 }
 
-function salvarTarefas(lista) {
-  localStorage.setItem(CHAVE_STORAGE_TAREFAS, JSON.stringify(lista));
+async function salvarTarefa(tarefa) {
+  const { error } = await window.supabase
+    .from('alprox_s_s_is')
+    .insert({
+      usuario_id: window.usuario_id,
+      titulo: tarefa.titulo,
+      descricao: tarefa.descricao || '',
+      prazo: tarefa.prazo || null,
+      status: tarefa.status || 'a-fazer'
+    });
+
+  if (error) {
+    console.error('Erro ao salvar tarefa:', error);
+    throw error;
+  }
 }
 
-let tarefas = carregarTarefas();
+async function atualizarTarefa(id, tarefaAtualizada) {
+  const { error } = await window.supabase
+    .from('alprox_s_s_is')
+    .update({
+      titulo: tarefaAtualizada.titulo,
+      descricao: tarefaAtualizada.descricao || '',
+      prazo: tarefaAtualizada.prazo || null,
+      status: tarefaAtualizada.status,
+      atualizado_em: new Date().toISOString()
+    })
+    .eq('id', id)
+    .eq('usuario_id', window.usuario_id);
+
+  if (error) {
+    console.error('Erro ao atualizar tarefa:', error);
+    throw error;
+  }
+}
+
+async function deletarTarefa(id) {
+  const { error } = await window.supabase
+    .from('alprox_s_s_is')
+    .delete()
+    .eq('id', id)
+    .eq('usuario_id', window.usuario_id);
+
+  if (error) {
+    console.error('Erro ao deletar tarefa:', error);
+    throw error;
+  }
+}
+
+let tarefas = [];
 
 // ---------- Elementos ----------
 
@@ -66,46 +119,62 @@ tarefaCancelarBtn.addEventListener('click', fecharTarefaForm);
 
 // ---------- Salvar (criar ou editar) ----------
 
-tarefaForm.addEventListener('submit', (evento) => {
+tarefaForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
   const id = tarefaIdEl.value;
+  const novosDados = {
+    titulo: tarefaTituloEl.value.trim(),
+    prazo: tarefaPrazoEl.value,
+    status: tarefaStatusEl.value,
+    descricao: tarefaDescEl.value.trim()
+  };
 
-  if (id) {
-    const tarefa = tarefas.find(t => t.id === id);
-    tarefa.titulo = tarefaTituloEl.value.trim();
-    tarefa.prazo = tarefaPrazoEl.value;
-    tarefa.status = tarefaStatusEl.value;
-    tarefa.descricao = tarefaDescEl.value.trim();
-  } else {
-    tarefas.push({
-      id: Date.now().toString(),
-      titulo: tarefaTituloEl.value.trim(),
-      prazo: tarefaPrazoEl.value,
-      status: tarefaStatusEl.value,
-      descricao: tarefaDescEl.value.trim()
-    });
+  try {
+    if (id) {
+      // Editar tarefa existente
+      await atualizarTarefa(id, novosDados);
+    } else {
+      // Criar nova tarefa
+      await salvarTarefa(novosDados);
+    }
+
+    fecharTarefaForm();
+    await atualizarListaTarefas();
+  } catch (erro) {
+    console.error('Erro ao salvar tarefa:', erro);
+    alert('Erro ao salvar tarefa. Tente novamente.');
   }
-
-  salvarTarefas(tarefas);
-  fecharTarefaForm();
-  renderizarTarefas();
 });
 
 // ---------- Ações ----------
 
-function mudarStatusTarefa(id, novoStatus) {
-  const tarefa = tarefas.find(t => t.id === id);
-  tarefa.status = novoStatus;
-  salvarTarefas(tarefas);
-  renderizarTarefas();
+async function mudarStatusTarefa(id, novoStatus) {
+  try {
+    await atualizarTarefa(id, { status: novoStatus });
+    await atualizarListaTarefas();
+  } catch (erro) {
+    console.error('Erro ao mudar status:', erro);
+    alert('Erro ao mudar status da tarefa.');
+  }
 }
 
-function excluirTarefa(id) {
+async function excluirTarefa(id) {
   const confirmou = confirm('Tem certeza que quer excluir esta tarefa?');
   if (!confirmou) return;
-  tarefas = tarefas.filter(t => t.id !== id);
-  salvarTarefas(tarefas);
+
+  try {
+    await deletarTarefa(id);
+    await atualizarListaTarefas();
+  } catch (erro) {
+    console.error('Erro ao excluir tarefa:', erro);
+    alert('Erro ao excluir tarefa.');
+  }
+}
+
+// Função auxiliar para atualizar a lista renderizada
+async function atualizarListaTarefas() {
+  tarefas = await carregarTarefas();
   renderizarTarefas();
 }
 
@@ -146,9 +215,13 @@ function criarTarefaCard(tarefa) {
     </div>
   `;
 
-  card.querySelector('[data-acao="mudar-status"]').addEventListener('change', (e) => mudarStatusTarefa(tarefa.id, e.target.value));
+  card.querySelector('[data-acao="mudar-status"]').addEventListener('change', async (e) => {
+    await mudarStatusTarefa(tarefa.id, e.target.value);
+  });
   card.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirTarefaFormEdicao(tarefa));
-  card.querySelector('[data-acao="excluir"]').addEventListener('click', () => excluirTarefa(tarefa.id));
+  card.querySelector('[data-acao="excluir"]').addEventListener('click', async () => {
+    await excluirTarefa(tarefa.id);
+  });
 
   return card;
 }
@@ -170,4 +243,20 @@ function renderizarTarefas() {
 
 // ---------- Início ----------
 
-renderizarTarefas();
+// Carregar tarefas ao inicializar
+async function inicializarTarefas() {
+  if (!window.usuario_id) {
+    console.warn('Aguardando autenticação...');
+    // Retentar após autenticação
+    window.addEventListener('usuario-logado', inicializarTarefas);
+    return;
+  }
+  await atualizarListaTarefas();
+}
+
+// Inicializar quando o DOM estiver pronto e usuario autenticado
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', inicializarTarefas);
+} else {
+  inicializarTarefas();
+}

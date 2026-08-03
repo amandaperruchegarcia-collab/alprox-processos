@@ -494,6 +494,12 @@ textarea { resize: vertical; }
   border-left-color: #B3462C;
 }
 
+.tarefa-card.alerta-vencimento {
+  background: var(--dourado-claro);
+  border-color: var(--dourado);
+  border-left-color: var(--dourado);
+}
+
 .tarefa-topo {
   display: flex;
   justify-content: space-between;
