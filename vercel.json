@@ -1,0 +1,7 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "aula-2/app",
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "alprox-processos",
+  "version": "1.0.0",
+  "description": "App de gerenciamento de processos ALPROX com autenticação multiusuário e banco de dados na nuvem",
+  "private": true,
+  "scripts": {
+    "dev": "python aula-2/no_cache_server.py",
+    "preview": "open aula-2/preview.html"
+  },
+  "author": "Amanda Perruche Garcia",
+  "license": "MIT"
+}
