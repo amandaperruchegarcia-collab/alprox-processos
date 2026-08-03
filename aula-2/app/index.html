@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Alprox Processos</title>
 <link rel="stylesheet" href="style.css">
+<script type="module">
+  import { supabase, inicializarSessao, usuario_id, usuario_nome } from './supabase-config.js';
+  window.supabase = supabase;
+  window.inicializarSessao = inicializarSessao;
+</script>
 </head>
 <body>
 

@@ -1,3 +1,5 @@
+import { supabase, usuario_id } from './supabase-config.js';
+
 const DEPARTAMENTOS = [
   'Administrativo',
   'Contábil',
@@ -8,18 +10,122 @@ const DEPARTAMENTOS = [
   'Treinamento'
 ];
 
-const CHAVE_STORAGE = 'alprox_processos';
+let processos = [];
 
-function carregarProcessos() {
-  const dados = localStorage.getItem(CHAVE_STORAGE);
-  return dados ? JSON.parse(dados) : [];
+/**
+ * Carrega processos do Supabase
+ * @returns {Promise<Array>} Lista de processos ativos
+ */
+async function carregarProcessos() {
+  try {
+    const { data, error } = await supabase
+      .from('processos')
+      .select('*')
+      .eq('status', 'ativo');
+
+    if (error) {
+      console.error('❌ Erro ao carregar processos:', error);
+      return [];
+    }
+
+    processos = data || [];
+    console.log('✅ Processos carregados:', processos.length);
+    return processos;
+  } catch (error) {
+    console.error('❌ Erro ao carregar processos (catch):', error);
+    return [];
+  }
 }
 
-function salvarProcessos(lista) {
-  localStorage.setItem(CHAVE_STORAGE, JSON.stringify(lista));
+/**
+ * Salva um novo processo no Supabase
+ * @param {Object} processo - Dados do processo
+ * @returns {Promise<void>}
+ */
+async function salvarProcesso(processo) {
+  try {
+    const { error } = await supabase
+      .from('processos')
+      .insert({
+        nome: processo.nome,
+        departamento: processo.departamento,
+        codigo: processo.codigo,
+        link_drive: processo.linkDrive,
+        link_youtube: processo.linkYoutube,
+        status: processo.status || 'ativo',
+        observacoes: processo.observacoes,
+        criado_por: usuario_id
+      });
+
+    if (error) {
+      console.error('❌ Erro ao salvar processo:', error);
+      throw error;
+    }
+
+    console.log('✅ Processo salvo com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao salvar processo (catch):', error);
+    throw error;
+  }
 }
 
-let processos = carregarProcessos();
+/**
+ * Atualiza um processo no Supabase
+ * @param {string} id - ID do processo
+ * @param {Object} processoAtualizado - Dados atualizados
+ * @returns {Promise<void>}
+ */
+async function atualizarProcesso(id, processoAtualizado) {
+  try {
+    const { error } = await supabase
+      .from('processos')
+      .update({
+        nome: processoAtualizado.nome,
+        departamento: processoAtualizado.departamento,
+        codigo: processoAtualizado.codigo,
+        link_drive: processoAtualizado.linkDrive,
+        link_youtube: processoAtualizado.linkYoutube,
+        status: processoAtualizado.status,
+        observacoes: processoAtualizado.observacoes,
+        atualizado_em: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Erro ao atualizar processo:', error);
+      throw error;
+    }
+
+    console.log('✅ Processo atualizado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao atualizar processo (catch):', error);
+    throw error;
+  }
+}
+
+/**
+ * Deleta um processo do Supabase
+ * @param {string} id - ID do processo
+ * @returns {Promise<void>}
+ */
+async function deletarProcesso(id) {
+  try {
+    const { error } = await supabase
+      .from('processos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Erro ao deletar processo:', error);
+      throw error;
+    }
+
+    console.log('✅ Processo deletado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao deletar processo (catch):', error);
+    throw error;
+  }
+}
 
 // ---------- Elementos ----------
 
@@ -87,52 +193,77 @@ cancelarBtn.addEventListener('click', fecharForm);
 
 // ---------- Salvar (criar ou editar) ----------
 
-form.addEventListener('submit', (evento) => {
+form.addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
-  const id = idEl.value;
+  try {
+    const id = idEl.value;
 
-  if (id) {
-    const processo = processos.find(p => p.id === id);
-    processo.nome = nomeEl.value.trim();
-    processo.departamento = deptoEl.value;
-    processo.codigo = codigoEl.value.trim();
-    processo.linkDrive = driveEl.value.trim();
-    processo.linkYoutube = youtubeEl.value.trim();
-    processo.observacoes = obsEl.value.trim();
-  } else {
-    processos.push({
-      id: Date.now().toString(),
-      nome: nomeEl.value.trim(),
-      departamento: deptoEl.value,
-      codigo: codigoEl.value.trim(),
-      linkDrive: driveEl.value.trim(),
-      linkYoutube: youtubeEl.value.trim(),
-      observacoes: obsEl.value.trim(),
-      status: 'ativo'
-    });
+    if (id) {
+      // Editar processo existente
+      const processoAtualizado = {
+        nome: nomeEl.value.trim(),
+        departamento: deptoEl.value,
+        codigo: codigoEl.value.trim(),
+        linkDrive: driveEl.value.trim(),
+        linkYoutube: youtubeEl.value.trim(),
+        observacoes: obsEl.value.trim(),
+        status: 'ativo'
+      };
+      await atualizarProcesso(id, processoAtualizado);
+    } else {
+      // Criar novo processo
+      const novoProcesso = {
+        nome: nomeEl.value.trim(),
+        departamento: deptoEl.value,
+        codigo: codigoEl.value.trim(),
+        linkDrive: driveEl.value.trim(),
+        linkYoutube: youtubeEl.value.trim(),
+        observacoes: obsEl.value.trim(),
+        status: 'ativo'
+      };
+      await salvarProcesso(novoProcesso);
+    }
+
+    fecharForm();
+    await carregarProcessos();
+    renderizarLista();
+  } catch (error) {
+    console.error('❌ Erro ao salvar/atualizar processo:', error);
+    alert('Erro ao salvar processo. Verifique o console.');
   }
-
-  salvarProcessos(processos);
-  fecharForm();
-  renderizarLista();
 });
 
 // ---------- Ações da lista ----------
 
-function alternarStatus(id) {
-  const processo = processos.find(p => p.id === id);
-  processo.status = processo.status === 'ativo' ? 'inativo' : 'ativo';
-  salvarProcessos(processos);
-  renderizarLista();
+async function alternarStatus(id) {
+  try {
+    const processo = processos.find(p => p.id === id);
+    if (!processo) return;
+
+    const novoStatus = processo.status === 'ativo' ? 'inativo' : 'ativo';
+    await atualizarProcesso(id, { ...processo, status: novoStatus });
+
+    await carregarProcessos();
+    renderizarLista();
+  } catch (error) {
+    console.error('❌ Erro ao alternar status:', error);
+    alert('Erro ao alterar status. Verifique o console.');
+  }
 }
 
-function excluirProcesso(id) {
+async function excluirProcesso(id) {
   const confirmou = confirm('Tem certeza que quer excluir este processo? Essa ação não pode ser desfeita.');
   if (!confirmou) return;
-  processos = processos.filter(p => p.id !== id);
-  salvarProcessos(processos);
-  renderizarLista();
+
+  try {
+    await deletarProcesso(id);
+    await carregarProcessos();
+    renderizarLista();
+  } catch (error) {
+    console.error('❌ Erro ao excluir processo:', error);
+    alert('Erro ao excluir processo. Verifique o console.');
+  }
 }
 
 // ---------- Renderização ----------
@@ -190,28 +321,46 @@ function ehUrlSegura(url) {
   }
 }
 
-function renderizarLista() {
-  const termoBusca = buscaEl.value.trim().toLowerCase();
-  const deptoFiltro = filtroDeptoEl.value;
-  const mostrarInativos = mostrarInativosEl.checked;
+async function renderizarLista() {
+  try {
+    const termoBusca = buscaEl.value.trim().toLowerCase();
+    const deptoFiltro = filtroDeptoEl.value;
+    const mostrarInativos = mostrarInativosEl.checked;
 
-  const filtrados = processos.filter(p => {
-    if (!mostrarInativos && p.status === 'inativo') return false;
-    if (deptoFiltro && p.departamento !== deptoFiltro) return false;
-    if (termoBusca && !p.nome.toLowerCase().includes(termoBusca)) return false;
-    return true;
-  });
+    // Se vai mostrar inativos, carregar também processos inativos
+    let dadosParaRenderizar = [...processos];
 
-  listaEl.innerHTML = '';
+    if (mostrarInativos) {
+      const { data: inativos, error } = await supabase
+        .from('processos')
+        .select('*')
+        .eq('status', 'inativo');
 
-  if (filtrados.length === 0) {
-    vazioEl.classList.remove('escondido');
-    vazioEl.textContent = processos.length === 0
-      ? 'Nenhum processo cadastrado ainda. Clique em "+ Novo processo" pra começar.'
-      : 'Nenhum processo encontrado com esse filtro.';
-  } else {
-    vazioEl.classList.add('escondido');
-    filtrados.forEach(p => listaEl.appendChild(criarCard(p)));
+      if (!error && inativos) {
+        dadosParaRenderizar = [...processos, ...inativos];
+      }
+    }
+
+    const filtrados = dadosParaRenderizar.filter(p => {
+      if (!mostrarInativos && p.status === 'inativo') return false;
+      if (deptoFiltro && p.departamento !== deptoFiltro) return false;
+      if (termoBusca && !p.nome.toLowerCase().includes(termoBusca)) return false;
+      return true;
+    });
+
+    listaEl.innerHTML = '';
+
+    if (filtrados.length === 0) {
+      vazioEl.classList.remove('escondido');
+      vazioEl.textContent = dadosParaRenderizar.length === 0
+        ? 'Nenhum processo cadastrado ainda. Clique em "+ Novo processo" pra começar.'
+        : 'Nenhum processo encontrado com esse filtro.';
+    } else {
+      vazioEl.classList.add('escondido');
+      filtrados.forEach(p => listaEl.appendChild(criarCard(p)));
+    }
+  } catch (error) {
+    console.error('❌ Erro ao renderizar lista:', error);
   }
 }
 
@@ -221,5 +370,21 @@ mostrarInativosEl.addEventListener('change', renderizarLista);
 
 // ---------- Início ----------
 
-preencherSelectsDepartamento();
-renderizarLista();
+async function inicializar() {
+  try {
+    preencherSelectsDepartamento();
+    await carregarProcessos();
+    renderizarLista();
+  } catch (error) {
+    console.error('❌ Erro ao inicializar:', error);
+  }
+}
+
+// Inicializar quando o módulo carregar
+inicializar();
+
+// Re-inicializar quando usuário fizer login
+window.addEventListener('usuario-logado', () => {
+  console.log('🔄 Recarregando processos após login...');
+  inicializar();
+});
