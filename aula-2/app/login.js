@@ -157,7 +157,24 @@ export async function fazerSignup(email, senha, senhaConfirmacao) {
         password: senha
       });
       if (loginError) throw loginError;
-      // Continue - user exists and is now logged in
+
+      // Get userId from login response and create colaborador entry
+      const recoveredUserId = loginData.user.id;
+      const { error: erroInsert } = await supabase.from('colaboradores').insert({
+        id: recoveredUserId,
+        nome: email.split('@')[0],
+        email: email,
+        cargo: null,
+        role: 'user',
+        ativo: true
+      });
+
+      if (erroInsert && erroInsert.code !== '23505') {
+        console.warn('⚠️ Aviso ao criar colaborador:', erroInsert);
+      } else if (!erroInsert) {
+        console.log('✅ Novo colaborador criado (após recuperação):', email);
+      }
+      // Continue - user exists and colaborador entry created
       console.log('✅ Usuário criado (verificado via login):', email);
     } else {
       // Normal path - have userId, create colaborador entry then login
