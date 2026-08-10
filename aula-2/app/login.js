@@ -1,5 +1,41 @@
 import { supabase, inicializarSessao } from './supabase-config.js';
 
+/**
+ * Valida se o email tem formato correto
+ * @param {string} email - Email a validar
+ * @returns {boolean} true se válido, false caso contrário
+ */
+function validarEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+/**
+ * Valida os dados do signup
+ * @param {string} email - Email do usuário
+ * @param {string} senha - Senha
+ * @param {string} senhaConfirmacao - Confirmação de senha
+ * @returns {string|null} null se válido, mensagem de erro caso contrário
+ */
+function validarSignup(email, senha, senhaConfirmacao) {
+  if (!email || !email.trim()) {
+    return 'Email é obrigatório';
+  }
+  if (!validarEmail(email)) {
+    return 'Email inválido';
+  }
+  if (!senha || senha.length < 1) {
+    return 'Senha é obrigatória';
+  }
+  if (!senhaConfirmacao || senhaConfirmacao.length < 1) {
+    return 'Confirmação de senha é obrigatória';
+  }
+  if (senha !== senhaConfirmacao) {
+    return 'Senhas não conferem';
+  }
+  return null; // Válido
+}
+
 // Elementos do formulário
 const loginForm = document.getElementById('login-form');
 const loginEmail = document.getElementById('login-email');
