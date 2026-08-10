@@ -19,7 +19,7 @@ let processos = [];
 async function carregarProcessos() {
   try {
     const { data, error } = await supabase
-      .from('processos')
+      .from('alprox_processos')
       .select('*')
       .eq('status', 'ativo');
 
@@ -45,7 +45,7 @@ async function carregarProcessos() {
 async function salvarProcesso(processo) {
   try {
     const { error } = await supabase
-      .from('processos')
+      .from('alprox_processos')
       .insert({
         nome: processo.nome,
         departamento: processo.departamento,
@@ -78,7 +78,7 @@ async function salvarProcesso(processo) {
 async function atualizarProcesso(id, processoAtualizado) {
   try {
     const { error } = await supabase
-      .from('processos')
+      .from('alprox_processos')
       .update({
         nome: processoAtualizado.nome,
         departamento: processoAtualizado.departamento,
@@ -111,7 +111,7 @@ async function atualizarProcesso(id, processoAtualizado) {
 async function deletarProcesso(id) {
   try {
     const { error } = await supabase
-      .from('processos')
+      .from('alprox_processos')
       .delete()
       .eq('id', id);
 
@@ -332,7 +332,7 @@ async function renderizarLista() {
 
     if (mostrarInativos) {
       const { data: inativos, error } = await supabase
-        .from('processos')
+        .from('alprox_processos')
         .select('*')
         .eq('status', 'inativo');
 

@@ -343,7 +343,7 @@ async function criarSelectProcessos(valorAtual) {
 
   try {
     const { data: processos, error } = await supabase
-      .from('processos')
+      .from('alprox_processos')
       .select('id, nome')
       .eq('status', 'ativo')
       .order('nome');
