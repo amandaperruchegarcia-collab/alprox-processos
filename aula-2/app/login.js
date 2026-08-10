@@ -196,6 +196,50 @@ export async function fazerSignup(email, senha, senhaConfirmacao) {
 }
 
 /**
+ * Muda a tela de login para signup
+ */
+function mudarParaSignup() {
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const loginErro = document.getElementById('login-erro');
+  const signupErro = document.getElementById('signup-erro');
+
+  loginForm.classList.add('escondido');
+  signupForm.classList.remove('escondido');
+  loginErro.style.display = 'none';
+  signupErro.style.display = 'none';
+
+  // Limpar campos
+  loginForm.reset();
+  signupForm.reset();
+
+  // Focar no email
+  document.getElementById('signup-email').focus();
+}
+
+/**
+ * Muda a tela de signup para login
+ */
+function mudarParaLogin() {
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  const loginErro = document.getElementById('login-erro');
+  const signupErro = document.getElementById('signup-erro');
+
+  signupForm.classList.add('escondido');
+  loginForm.classList.remove('escondido');
+  loginErro.style.display = 'none';
+  signupErro.style.display = 'none';
+
+  // Limpar campos
+  loginForm.reset();
+  signupForm.reset();
+
+  // Focar no email
+  document.getElementById('login-email').focus();
+}
+
+/**
  * Verifica se o usuário está autenticado
  * @returns {Promise<boolean>} true se autenticado, false caso contrário
  */
