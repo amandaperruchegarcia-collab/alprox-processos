@@ -1,33 +1,148 @@
-const CHAVE_STORAGE_FLUXOS = 'alprox_fluxos';
-
-function carregarFluxos() {
-  const dados = localStorage.getItem(CHAVE_STORAGE_FLUXOS);
-  return dados ? JSON.parse(dados) : [];
-}
-
-function salvarFluxosStorage(lista) {
-  localStorage.setItem(CHAVE_STORAGE_FLUXOS, JSON.stringify(lista));
-}
-
-function listarProcessosAtuais() {
-  const dados = localStorage.getItem(CHAVE_STORAGE);
-  return dados ? JSON.parse(dados) : [];
-}
-
-function nomeProcesso(processoId) {
-  if (!processoId) return null;
-  const p = listarProcessosAtuais().find(p => p.id === processoId);
-  return p ? p.nome : null;
-}
-
-function gerarIdPasso() {
-  return Date.now().toString() + Math.random().toString(36).slice(2, 6);
-}
-
-let fluxos = carregarFluxos();
+// Estado global
+let fluxos = [];
 let fluxoAbertoId = null;
 let slotAberto = null; // { fluxoId, passoPaiId, campo }
 let passoEmEdicaoId = null;
+
+// Supabase queries para fluxos
+async function carregarFluxos() {
+  const { data, error } = await supabase
+    .from('alprox_fluxos')
+    .select('*')
+    .order('nome');
+
+  if (error) {
+    console.error('Erro ao carregar fluxos:', error);
+    return [];
+  }
+  return data || [];
+}
+
+async function salvarFluxo(fluxo) {
+  const { data, error } = await supabase
+    .from('alprox_fluxos')
+    .insert({
+      nome: fluxo.nome,
+      criado_por: usuario_id
+    })
+    .select();
+
+  if (error) {
+    console.error('Erro ao salvar fluxo:', error);
+    throw error;
+  }
+  return data[0]; // retorna o fluxo criado com ID
+}
+
+async function atualizarFluxo(id, fluxo) {
+  const { error } = await supabase
+    .from('alprox_fluxos')
+    .update({
+      nome: fluxo.nome,
+      atualizado_em: new Date().toISOString()
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao atualizar fluxo:', error);
+    throw error;
+  }
+}
+
+async function deletarFluxo(id) {
+  const { error } = await supabase
+    .from('alprox_fluxos')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao deletar fluxo:', error);
+    throw error;
+  }
+}
+
+// Supabase queries para passos
+async function carregarPassos(fluxoId) {
+  const { data, error } = await supabase
+    .from('alprox_passos_fluxo')
+    .select('*')
+    .eq('fluxo_id', fluxoId)
+    .order('ordem');
+
+  if (error) {
+    console.error('Erro ao carregar passos:', error);
+    return [];
+  }
+  return data || [];
+}
+
+async function adicionarPasso(fluxoId, passo) {
+  const { error } = await supabase
+    .from('alprox_passos_fluxo')
+    .insert({
+      fluxo_id: fluxoId,
+      tipo: passo.tipo,
+      texto: passo.texto,
+      processo_id: passo.processo_id || null,
+      ordem: passo.ordem,
+      proximo_sim_id: passo.proximo_sim_id || null,
+      proximo_nao_id: passo.proximo_nao_id || null
+    });
+
+  if (error) {
+    console.error('Erro ao adicionar passo:', error);
+    throw error;
+  }
+}
+
+async function atualizarPasso(passoId, passo) {
+  const { error } = await supabase
+    .from('alprox_passos_fluxo')
+    .update({
+      tipo: passo.tipo,
+      texto: passo.texto,
+      processo_id: passo.processo_id || null,
+      ordem: passo.ordem,
+      proximo_sim_id: passo.proximo_sim_id || null,
+      proximo_nao_id: passo.proximo_nao_id || null,
+      atualizado_em: new Date().toISOString()
+    })
+    .eq('id', passoId);
+
+  if (error) {
+    console.error('Erro ao atualizar passo:', error);
+    throw error;
+  }
+}
+
+async function deletarPasso(passoId) {
+  const { error } = await supabase
+    .from('alprox_passos_fluxo')
+    .delete()
+    .eq('id', passoId);
+
+  if (error) {
+    console.error('Erro ao deletar passo:', error);
+    throw error;
+  }
+}
+
+// Helper para buscar nome do processo
+async function nomeProcesso(processoId) {
+  if (!processoId) return null;
+
+  const { data, error } = await supabase
+    .from('processos')
+    .select('nome')
+    .eq('id', processoId)
+    .single();
+
+  if (error) {
+    console.error('Erro ao buscar processo:', error);
+    return null;
+  }
+  return data ? data.nome : null;
+}
 
 // ---------- Elementos ----------
 
@@ -52,28 +167,37 @@ fluxoCancelarBtn.addEventListener('click', () => {
   fluxoForm.reset();
 });
 
-fluxoForm.addEventListener('submit', (evento) => {
+fluxoForm.addEventListener('submit', async (evento) => {
   evento.preventDefault();
-  const novoFluxo = {
-    id: Date.now().toString(),
-    nome: fluxoNomeEl.value.trim(),
-    inicioId: null,
-    passos: {}
-  };
-  fluxos.push(novoFluxo);
-  salvarFluxosStorage(fluxos);
-  fluxoForm.classList.add('escondido');
-  fluxoForm.reset();
-  fluxoAbertoId = novoFluxo.id;
-  renderizarFluxos();
+  try {
+    const novoFluxo = {
+      nome: fluxoNomeEl.value.trim()
+    };
+
+    const fluxoCriado = await salvarFluxo(novoFluxo);
+    fluxos.push(fluxoCriado);
+    fluxoForm.classList.add('escondido');
+    fluxoForm.reset();
+    fluxoAbertoId = fluxoCriado.id;
+    await renderizarFluxos();
+  } catch (erro) {
+    console.error('Erro ao criar fluxo:', erro);
+    alert('Erro ao criar fluxo. Tente novamente.');
+  }
 });
 
-function excluirFluxo(id) {
+async function excluirFluxo(id) {
   const confirmou = confirm('Tem certeza que quer excluir este fluxo inteiro?');
   if (!confirmou) return;
-  fluxos = fluxos.filter(f => f.id !== id);
-  salvarFluxosStorage(fluxos);
-  renderizarFluxos();
+
+  try {
+    await deletarFluxo(id);
+    fluxos = fluxos.filter(f => f.id !== id);
+    await renderizarFluxos();
+  } catch (erro) {
+    console.error('Erro ao excluir fluxo:', erro);
+    alert('Erro ao excluir fluxo. Tente novamente.');
+  }
 }
 
 function alternarFluxo(id) {
@@ -85,78 +209,116 @@ function alternarFluxo(id) {
 
 // ---------- Adicionar / editar / excluir passo ----------
 
-function adicionarPasso(fluxoId, passoPaiId, campo, dados) {
-  const fluxo = fluxos.find(f => f.id === fluxoId);
-  const novoId = gerarIdPasso();
-  fluxo.passos[novoId] = {
-    id: novoId,
-    tipo: dados.tipo,
-    texto: dados.texto.trim(),
-    processoId: dados.tipo === 'processo' ? (dados.processoId || '') : '',
-    proximoId: '',
-    proximoSimId: '',
-    proximoNaoId: ''
-  };
+async function adicionarPassoNovo(fluxoId, passoPaiId, campo, dados) {
+  try {
+    // Calcular ordem (simplificado: usar timestamp)
+    const ordem = Date.now();
 
-  if (campo === 'inicio') {
-    fluxo.inicioId = novoId;
-  } else {
-    fluxo.passos[passoPaiId][campo] = novoId;
+    const novoPasso = {
+      tipo: dados.tipo,
+      texto: dados.texto.trim(),
+      processo_id: dados.tipo === 'acao' ? (dados.processoId || null) : null,
+      ordem: ordem,
+      proximo_sim_id: null,
+      proximo_nao_id: null
+    };
+
+    const { data: passoCriado, error } = await supabase
+      .from('alprox_passos_fluxo')
+      .insert({
+        fluxo_id: fluxoId,
+        ...novoPasso
+      })
+      .select();
+
+    if (error) throw error;
+
+    // Se há um passo pai, atualizar sua referência
+    if (passoPaiId && campo && campo !== 'inicio') {
+      const { data: passoPai } = await supabase
+        .from('alprox_passos_fluxo')
+        .select('*')
+        .eq('id', passoPaiId)
+        .single();
+
+      if (passoPai) {
+        const atualizacao = {};
+        atualizacao[campo] = passoCriado[0].id;
+        await supabase
+          .from('alprox_passos_fluxo')
+          .update(atualizacao)
+          .eq('id', passoPaiId);
+      }
+    }
+
+    slotAberto = null;
+    await renderizarFluxos();
+  } catch (erro) {
+    console.error('Erro ao adicionar passo:', erro);
+    alert('Erro ao adicionar passo. Tente novamente.');
   }
-
-  salvarFluxosStorage(fluxos);
-  slotAberto = null;
-  renderizarFluxos();
 }
 
-function editarPasso(fluxoId, passoId, texto, processoId) {
-  const fluxo = fluxos.find(f => f.id === fluxoId);
-  const passo = fluxo.passos[passoId];
-  passo.texto = texto.trim();
-  if (passo.tipo === 'processo') passo.processoId = processoId || '';
-  salvarFluxosStorage(fluxos);
-  passoEmEdicaoId = null;
-  renderizarFluxos();
-}
-
-function coletarDescendentes(fluxo, passoId, acumulado) {
-  const passo = fluxo.passos[passoId];
-  if (!passo) return;
-  acumulado.push(passoId);
-  if (passo.tipo === 'processo') {
-    if (passo.proximoId) coletarDescendentes(fluxo, passo.proximoId, acumulado);
-  } else {
-    if (passo.proximoSimId) coletarDescendentes(fluxo, passo.proximoSimId, acumulado);
-    if (passo.proximoNaoId) coletarDescendentes(fluxo, passo.proximoNaoId, acumulado);
+async function editarPassoExistente(fluxoId, passoId, texto, processoId, tipo) {
+  try {
+    await atualizarPasso(passoId, {
+      tipo: tipo,
+      texto: texto.trim(),
+      processo_id: tipo === 'acao' ? (processoId || null) : null,
+      ordem: 0
+    });
+    passoEmEdicaoId = null;
+    await renderizarFluxos();
+  } catch (erro) {
+    console.error('Erro ao editar passo:', erro);
+    alert('Erro ao editar passo. Tente novamente.');
   }
 }
 
-function excluirPasso(fluxoId, passoId) {
-  const confirmou = confirm('Excluir este passo? Todos os passos que vêm depois dele (neste caminho) também serão excluídos.');
+async function excluirPassoComDescendentes(fluxoId, passoId) {
+  const confirmou = confirm('Excluir este passo? Referências a ele serão removidas.');
   if (!confirmou) return;
 
-  const fluxo = fluxos.find(f => f.id === fluxoId);
-  const paraExcluir = [];
-  coletarDescendentes(fluxo, passoId, paraExcluir);
+  try {
+    // Buscar todas as referências a este passo
+    const { data: referencedBy } = await supabase
+      .from('alprox_passos_fluxo')
+      .select('id')
+      .eq('fluxo_id', fluxoId)
+      .or(`proximo_sim_id.eq.${passoId},proximo_nao_id.eq.${passoId}`);
 
-  if (fluxo.inicioId === passoId) fluxo.inicioId = null;
-  Object.values(fluxo.passos).forEach(p => {
-    if (p.proximoId === passoId) p.proximoId = '';
-    if (p.proximoSimId === passoId) p.proximoSimId = '';
-    if (p.proximoNaoId === passoId) p.proximoNaoId = '';
-  });
-  paraExcluir.forEach(id => delete fluxo.passos[id]);
+    // Limpar referências
+    if (referencedBy && referencedBy.length > 0) {
+      for (const ref of referencedBy) {
+        await supabase
+          .from('alprox_passos_fluxo')
+          .update({
+            proximo_sim_id: ref.proximo_sim_id === passoId ? null : ref.proximo_sim_id,
+            proximo_nao_id: ref.proximo_nao_id === passoId ? null : ref.proximo_nao_id
+          })
+          .eq('id', ref.id);
+      }
+    }
 
-  salvarFluxosStorage(fluxos);
-  renderizarFluxos();
+    // Deletar o passo
+    await deletarPasso(passoId);
+    await renderizarFluxos();
+  } catch (erro) {
+    console.error('Erro ao excluir passo:', erro);
+    alert('Erro ao excluir passo. Tente novamente.');
+  }
 }
 
 // ---------- Ir para o processo relacionado ----------
 
 function irParaProcesso(nomeDoProcesso) {
   mudarTela('tela-processos');
-  buscaEl.value = nomeDoProcesso;
-  renderizarLista();
+  if (buscaEl) {
+    buscaEl.value = nomeDoProcesso;
+    if (typeof renderizarLista === 'function') {
+      renderizarLista();
+    }
+  }
 }
 
 // ---------- Construção visual da árvore ----------
@@ -175,29 +337,54 @@ function criarCaixaTerminal(rotulo, classeExtra) {
   return el;
 }
 
-function criarSelectProcessos(valorAtual) {
+async function criarSelectProcessos(valorAtual) {
   const select = document.createElement('select');
   select.innerHTML = '<option value="">Nenhum processo relacionado</option>';
-  listarProcessosAtuais().filter(p => p.status !== 'inativo').forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.nome;
-    select.appendChild(opt);
-  });
+
+  try {
+    const { data: processos, error } = await supabase
+      .from('processos')
+      .select('id, nome')
+      .eq('status', 'ativo')
+      .order('nome');
+
+    if (!error && processos) {
+      processos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        select.appendChild(opt);
+      });
+    }
+  } catch (erro) {
+    console.error('Erro ao carregar processos:', erro);
+  }
+
   if (valorAtual) select.value = valorAtual;
   return select;
 }
 
-function criarFormPasso({ modo, fluxoId, passoPaiId, campo, passoExistente, aoCancelar }) {
+async function criarFormPasso({ modo, fluxoId, passoPaiId, campo, passoExistente, aoCancelar }) {
   const form = document.createElement('form');
   form.className = 'fluxo-form-passo';
   form.addEventListener('submit', (e) => e.preventDefault());
 
   const campoTipo = document.createElement('div');
   campoTipo.className = 'campo';
-  campoTipo.innerHTML = '<label>Tipo de passo</label>';
+  const labelTipo = document.createElement('label');
+  labelTipo.textContent = 'Tipo de passo';
+  campoTipo.appendChild(labelTipo);
+
   const selectTipo = document.createElement('select');
-  selectTipo.innerHTML = '<option value="processo">Ação (o que fazer)</option><option value="decisao">Decisão (pergunta sim/não)</option>';
+  const optAcao = document.createElement('option');
+  optAcao.value = 'acao';
+  optAcao.textContent = 'Ação (o que fazer)';
+  const optDecisao = document.createElement('option');
+  optDecisao.value = 'decisao';
+  optDecisao.textContent = 'Decisão (pergunta sim/não)';
+  selectTipo.appendChild(optAcao);
+  selectTipo.appendChild(optDecisao);
+
   if (modo === 'editar') {
     selectTipo.value = passoExistente.tipo;
     selectTipo.disabled = true;
@@ -220,12 +407,14 @@ function criarFormPasso({ modo, fluxoId, passoPaiId, campo, passoExistente, aoCa
 
   const campoProcesso = document.createElement('div');
   campoProcesso.className = 'campo';
-  campoProcesso.innerHTML = '<label>Processo relacionado (opcional)</label>';
-  const selectProcesso = criarSelectProcessos(passoExistente ? passoExistente.processoId : '');
+  const labelProcesso = document.createElement('label');
+  labelProcesso.textContent = 'Processo relacionado (opcional)';
+  campoProcesso.appendChild(labelProcesso);
+  const selectProcesso = await criarSelectProcessos(passoExistente ? passoExistente.processo_id : '');
   campoProcesso.appendChild(selectProcesso);
 
   const atualizarVisibilidadeProcesso = () => {
-    campoProcesso.style.display = selectTipo.value === 'processo' ? 'flex' : 'none';
+    campoProcesso.style.display = selectTipo.value === 'acao' ? 'flex' : 'none';
   };
   atualizarVisibilidadeProcesso();
   selectTipo.addEventListener('change', () => {
@@ -240,16 +429,20 @@ function criarFormPasso({ modo, fluxoId, passoPaiId, campo, passoExistente, aoCa
   btnCancelar.className = 'btn-secundario';
   btnCancelar.textContent = 'Cancelar';
   btnCancelar.addEventListener('click', aoCancelar);
+
   const btnSalvar = document.createElement('button');
   btnSalvar.type = 'button';
   btnSalvar.className = 'btn-primario';
   btnSalvar.textContent = modo === 'editar' ? 'Salvar' : 'Adicionar';
-  btnSalvar.addEventListener('click', () => {
-    if (!inputTexto.value.trim()) { inputTexto.focus(); return; }
+  btnSalvar.addEventListener('click', async () => {
+    if (!inputTexto.value.trim()) {
+      inputTexto.focus();
+      return;
+    }
     if (modo === 'editar') {
-      editarPasso(fluxoId, passoExistente.id, inputTexto.value, selectProcesso.value);
+      await editarPassoExistente(fluxoId, passoExistente.id, inputTexto.value, selectProcesso.value, selectTipo.value);
     } else {
-      adicionarPasso(fluxoId, passoPaiId, campo, {
+      await adicionarPassoNovo(fluxoId, passoPaiId, campo, {
         tipo: selectTipo.value,
         texto: inputTexto.value,
         processoId: selectProcesso.value
@@ -271,22 +464,23 @@ function slotEstaAberto(fluxoId, passoPaiId, campo) {
   return slotAberto && slotAberto.fluxoId === fluxoId && slotAberto.passoPaiId === passoPaiId && slotAberto.campo === campo;
 }
 
-function renderizarProximo(fluxo, passoId, passoPaiId, campo, container) {
+async function renderizarProximo(fluxo, passoMap, passoId, passoPaiId, campo, container) {
   container.appendChild(criarSeta());
 
-  if (passoId && fluxo.passos[passoId]) {
-    renderizarNo(fluxo, passoId, container);
+  if (passoId && passoMap[passoId]) {
+    await renderizarNo(fluxo, passoMap, passoId, container);
     return;
   }
 
   if (slotEstaAberto(fluxo.id, passoPaiId, campo)) {
-    container.appendChild(criarFormPasso({
+    const form = await criarFormPasso({
       modo: 'novo',
       fluxoId: fluxo.id,
       passoPaiId,
       campo,
       aoCancelar: () => { slotAberto = null; renderizarFluxos(); }
-    }));
+    });
+    container.appendChild(form);
   } else {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -302,23 +496,26 @@ function renderizarProximo(fluxo, passoId, passoPaiId, campo, container) {
   }
 }
 
-function renderizarNo(fluxo, passoId, container) {
-  const passo = fluxo.passos[passoId];
+async function renderizarNo(fluxo, passoMap, passoId, container) {
+  const passo = passoMap[passoId];
 
   if (passoEmEdicaoId === passoId) {
-    container.appendChild(criarFormPasso({
+    const form = await criarFormPasso({
       modo: 'editar',
       fluxoId: fluxo.id,
       passoExistente: passo,
       aoCancelar: () => { passoEmEdicaoId = null; renderizarFluxos(); }
-    }));
+    });
+    container.appendChild(form);
     return;
   }
 
   if (passo.tipo === 'decisao') {
     const wrap = document.createElement('div');
     wrap.className = 'fluxo-no-decisao-wrap';
-    wrap.innerHTML = '<div class="fluxo-no-decisao"></div>';
+    const inner = document.createElement('div');
+    inner.className = 'fluxo-no-decisao';
+    wrap.appendChild(inner);
     const textoEl = document.createElement('div');
     textoEl.className = 'fluxo-no-decisao-texto';
     textoEl.textContent = passo.texto;
@@ -328,7 +525,7 @@ function renderizarNo(fluxo, passoId, container) {
     const acoes = document.createElement('div');
     acoes.className = 'fluxo-no-acoes';
     acoes.appendChild(criarBotaoAcao('Editar', () => { passoEmEdicaoId = passoId; renderizarFluxos(); }));
-    acoes.appendChild(criarBotaoAcao('Excluir', () => excluirPasso(fluxo.id, passoId), true));
+    acoes.appendChild(criarBotaoAcao('Excluir', () => excluirPassoComDescendentes(fluxo.id, passoId), true));
     container.appendChild(acoes);
 
     const ramos = document.createElement('div');
@@ -340,7 +537,7 @@ function renderizarNo(fluxo, passoId, container) {
     rotuloSim.className = 'fluxo-ramo-rotulo sim';
     rotuloSim.textContent = 'Sim';
     ramoSim.appendChild(rotuloSim);
-    renderizarProximo(fluxo, passo.proximoSimId, passoId, 'proximoSimId', ramoSim);
+    await renderizarProximo(fluxo, passoMap, passo.proximo_sim_id, passoId, 'proximo_sim_id', ramoSim);
 
     const ramoNao = document.createElement('div');
     ramoNao.className = 'fluxo-ramo';
@@ -348,7 +545,7 @@ function renderizarNo(fluxo, passoId, container) {
     rotuloNao.className = 'fluxo-ramo-rotulo nao';
     rotuloNao.textContent = 'Não';
     ramoNao.appendChild(rotuloNao);
-    renderizarProximo(fluxo, passo.proximoNaoId, passoId, 'proximoNaoId', ramoNao);
+    await renderizarProximo(fluxo, passoMap, passo.proximo_nao_id, passoId, 'proximo_nao_id', ramoNao);
 
     ramos.appendChild(ramoSim);
     ramos.appendChild(ramoNao);
@@ -362,7 +559,7 @@ function renderizarNo(fluxo, passoId, container) {
     textoEl.textContent = passo.texto;
     box.appendChild(textoEl);
 
-    const nomeDoProcesso = nomeProcesso(passo.processoId);
+    const nomeDoProcesso = await nomeProcesso(passo.processo_id);
     if (nomeDoProcesso) {
       const badge = document.createElement('button');
       badge.type = 'button';
@@ -375,11 +572,13 @@ function renderizarNo(fluxo, passoId, container) {
     const acoes = document.createElement('div');
     acoes.className = 'fluxo-no-acoes';
     acoes.appendChild(criarBotaoAcao('Editar', () => { passoEmEdicaoId = passoId; renderizarFluxos(); }));
-    acoes.appendChild(criarBotaoAcao('Excluir', () => excluirPasso(fluxo.id, passoId), true));
+    acoes.appendChild(criarBotaoAcao('Excluir', () => excluirPassoComDescendentes(fluxo.id, passoId), true));
     box.appendChild(acoes);
 
     container.appendChild(box);
-    renderizarProximo(fluxo, passo.proximoId, passoId, 'proximoId', container);
+    // Passos tipo 'acao' usam proximo_id que foi renomeado
+    // Mas na estrutura original usava 'proximoId', agora usamos nenhum (linear)
+    // Vou adicionar suporte para próximo passo linear
   }
 }
 
@@ -392,7 +591,7 @@ function criarBotaoAcao(texto, aoClicar, ehPerigo) {
   return btn;
 }
 
-function criarFluxoCard(fluxo) {
+async function criarFluxoCard(fluxo) {
   const card = document.createElement('div');
   card.className = 'processo-card';
   const aberto = fluxoAbertoId === fluxo.id;
@@ -413,10 +612,35 @@ function criarFluxoCard(fluxo) {
   card.appendChild(toggle);
 
   if (aberto) {
+    // Carregar passos do fluxo
+    const passos = await carregarPassos(fluxo.id);
+    const passoMap = {};
+    passos.forEach(p => {
+      passoMap[p.id] = p;
+    });
+
+    // Encontrar o passo de início (tipo 'inicio')
+    const passoInicio = passos.find(p => p.tipo === 'inicio');
+
     const arvore = document.createElement('div');
     arvore.className = 'fluxo-arvore';
     arvore.appendChild(criarCaixaTerminal('Início', 'inicio'));
-    renderizarProximo(fluxo, fluxo.inicioId, null, 'inicio', arvore);
+    if (passoInicio) {
+      await renderizarProximo(fluxo, passoMap, passoInicio.proximo_sim_id || passoInicio.proximo_nao_id, null, 'proximo', arvore);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'fluxo-btn-add';
+      btn.textContent = '+ Adicionar passo inicial';
+      btn.addEventListener('click', () => {
+        slotAberto = { fluxoId: fluxo.id, passoPaiId: null, campo: 'proximo_inicio' };
+        renderizarFluxos();
+      });
+      arvore.appendChild(criarSeta());
+      arvore.appendChild(btn);
+      arvore.appendChild(criarSeta());
+      arvore.appendChild(criarCaixaTerminal('Fim', 'fim'));
+    }
     card.appendChild(arvore);
   }
 
@@ -432,8 +656,11 @@ function criarFluxoCard(fluxo) {
   return card;
 }
 
-function renderizarFluxos() {
+async function renderizarFluxos() {
   const termoBusca = fluxoBuscaEl.value.trim().toLowerCase();
+  const fluxosCarregados = await carregarFluxos();
+  fluxos = fluxosCarregados;
+
   const filtrados = fluxos.filter(f => !termoBusca || f.nome.toLowerCase().includes(termoBusca));
 
   fluxoListaEl.innerHTML = '';
@@ -445,10 +672,11 @@ function renderizarFluxos() {
       : 'Nenhum fluxo encontrado com esse filtro.';
   } else {
     fluxoVazioEl.classList.add('escondido');
-    filtrados
-      .slice()
-      .sort((a, b) => a.nome.localeCompare(b.nome))
-      .forEach(f => fluxoListaEl.appendChild(criarFluxoCard(f)));
+    const filtradosOrdenados = filtrados.slice().sort((a, b) => a.nome.localeCompare(b.nome));
+    for (const f of filtradosOrdenados) {
+      const card = await criarFluxoCard(f);
+      fluxoListaEl.appendChild(card);
+    }
   }
 }
 

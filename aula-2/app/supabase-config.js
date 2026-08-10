@@ -12,6 +12,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 export let usuario_id = null;
 export let usuario_nome = null;
 
+// Guardar também em window para acessar de scripts não-módulos
+window.supabase_usuario_id = null;
+window.supabase_usuario_nome = null;
+
 /**
  * Inicializa a sessão do usuário
  * Verifica se existe uma sessão ativa e atualiza as variáveis globais
@@ -23,6 +27,8 @@ export async function inicializarSessao() {
     if (data.session) {
       usuario_id = data.session.user.id;
       usuario_nome = data.session.user.email;
+      window.supabase_usuario_id = usuario_id;
+      window.supabase_usuario_nome = usuario_nome;
       console.log('✅ Sessão inicializada para:', usuario_nome);
       return true; // autenticado
     }
@@ -43,6 +49,8 @@ export async function fazerLogout() {
     await supabase.auth.signOut();
     usuario_id = null;
     usuario_nome = null;
+    window.supabase_usuario_id = null;
+    window.supabase_usuario_nome = null;
     console.log('✅ Logout realizado com sucesso');
   } catch (error) {
     console.error('❌ Erro ao fazer logout:', error);

@@ -1,8 +1,3 @@
-function lerStorage(chave) {
-  const dados = localStorage.getItem(chave);
-  return dados ? JSON.parse(dados) : [];
-}
-
 function hojeISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -23,34 +18,53 @@ function criarCard(numero, label, aoClicar, alerta) {
   return btn;
 }
 
-function renderizarCards() {
-  const processos = lerStorage('alprox_processos');
-  const minhasTarefas = lerStorage('alprox_minhas_tarefas');
-  const tarefasEquipe = lerStorage('alprox_tarefas_equipe');
-  const prazos = lerStorage('alprox_prazos');
-  const certidoes = lerStorage('alprox_certidoes');
-  const certificados = lerStorage('alprox_certificados');
-  const clientes = lerStorage('alprox_clientes');
-  const fluxos = lerStorage('alprox_fluxos');
+/**
+ * Carrega dados de resumo do dashboard do Supabase
+ * @returns {Promise<Object>} Objeto com contagens dos 8 cards
+ */
+async function carregarResumoDashboard() {
+  try {
+    const [processos, fluxos, minhasTarefas, tarefasEquipe, prazos, certidoes, certificados, clientes] = await Promise.all([
+      supabase.from('processos').select('*', { count: 'exact', head: true }).eq('status', 'ativo'),
+      supabase.from('fluxos').select('*', { count: 'exact', head: true }),
+      supabase.from('tarefas_pessoais').select('*').eq('usuario_id', window.usuario_id),
+      supabase.from('tarefas_equipe').select('*').or(`criado_por.eq.${window.usuario_id},atribuido_para.eq.${window.usuario_id}`),
+      supabase.from('prazos').select('*').eq('usuario_id', window.usuario_id),
+      supabase.from('certidoes').select('*').eq('usuario_id', window.usuario_id),
+      supabase.from('certificados').select('*').eq('usuario_id', window.usuario_id),
+      supabase.from('clientes').select('*', { count: 'exact', head: true })
+    ]);
 
-  const hoje = hojeISO();
+    const hoje = hojeISO();
 
-  const processosAtivos = processos.filter(p => p.status !== 'inativo').length;
-  const minhasPendentes = minhasTarefas.filter(t => t.status !== 'feito').length;
-  const equipePendentes = tarefasEquipe.filter(t => t.status !== 'feito').length;
-  const prazosVencidos = prazos.filter(p => p.status !== 'cumprido' && p.vencimento < hoje).length;
-  const certidoesVencidas = certidoes.filter(c => c.validade < hoje).length;
-  const certificadosVencidos = certificados.filter(c => c.validade < hoje).length;
+    return {
+      processosAtivos: processos.count || 0,
+      fluxosCadastrados: fluxos.count || 0,
+      minhasTarefasPendentes: (minhasTarefas.data || []).filter(t => t.status !== 'feito').length,
+      tarefasEquipePendentes: (tarefasEquipe.data || []).filter(t => t.status !== 'feito').length,
+      prazosVencidos: (prazos.data || []).filter(p => p.data_vencimento < hoje && p.status === 'pendente').length,
+      certidulesVencidas: (certidoes.data || []).filter(c => c.data_validade < hoje).length,
+      certificadosVencidos: (certificados.data || []).filter(c => c.data_validade < hoje).length,
+      clientesCadastrados: clientes.count || 0
+    };
+  } catch (error) {
+    console.error('Erro ao carregar dashboard:', error);
+    return {};
+  }
+}
+
+async function renderizarCards() {
+  const resumo = await carregarResumoDashboard();
 
   dashCardsEl.innerHTML = '';
-  dashCardsEl.appendChild(criarCard(processosAtivos, 'Processos ativos', () => mudarTela('tela-processos')));
-  dashCardsEl.appendChild(criarCard(fluxos.length, 'Fluxos cadastrados', () => mudarTela('tela-fluxos')));
-  dashCardsEl.appendChild(criarCard(minhasPendentes, 'Minhas tarefas pendentes', () => mudarTela('tela-minhas-tarefas')));
-  dashCardsEl.appendChild(criarCard(equipePendentes, 'Tarefas da equipe pendentes', () => mudarTela('tela-tarefas-equipe')));
-  dashCardsEl.appendChild(criarCard(prazosVencidos, 'Prazos vencidos', () => mudarTela('tela-prazos'), prazosVencidos > 0));
-  dashCardsEl.appendChild(criarCard(certidoesVencidas, 'Certidões vencidas', () => mudarTela('tela-certidoes'), certidoesVencidas > 0));
-  dashCardsEl.appendChild(criarCard(certificadosVencidos, 'Certificados vencidos', () => mudarTela('tela-certificados'), certificadosVencidos > 0));
-  dashCardsEl.appendChild(criarCard(clientes.length, 'Clientes cadastrados', () => mudarTela('tela-clientes')));
+  dashCardsEl.appendChild(criarCard(resumo.processosAtivos || 0, 'Processos ativos', () => mudarTela('tela-processos')));
+  dashCardsEl.appendChild(criarCard(resumo.fluxosCadastrados || 0, 'Fluxos cadastrados', () => mudarTela('tela-fluxos')));
+  dashCardsEl.appendChild(criarCard(resumo.minhasTarefasPendentes || 0, 'Minhas tarefas pendentes', () => mudarTela('tela-minhas-tarefas')));
+  dashCardsEl.appendChild(criarCard(resumo.tarefasEquipePendentes || 0, 'Tarefas da equipe pendentes', () => mudarTela('tela-tarefas-equipe')));
+  dashCardsEl.appendChild(criarCard(resumo.prazosVencidos || 0, 'Prazos vencidos', () => mudarTela('tela-prazos'), (resumo.prazosVencidos || 0) > 0));
+  dashCardsEl.appendChild(criarCard(resumo.certidulesVencidas || 0, 'Certidões vencidas', () => mudarTela('tela-certidoes'), (resumo.certidulesVencidas || 0) > 0));
+  dashCardsEl.appendChild(criarCard(resumo.certificadosVencidos || 0, 'Certificados vencidos', () => mudarTela('tela-certificados'), (resumo.certificadosVencidos || 0) > 0));
+  dashCardsEl.appendChild(criarCard(resumo.clientesCadastrados || 0, 'Clientes cadastrados', () => mudarTela('tela-clientes')));
 }
 
 // ---------- Calendário ----------
@@ -70,58 +84,151 @@ let mesAtual = hojeData.getMonth();
 let anoAtual = hojeData.getFullYear();
 let diaSelecionado = null;
 
-function coletarEventosDoMes() {
-  const prazos = lerStorage('alprox_prazos');
-  const certidoes = lerStorage('alprox_certidoes');
-  const certificados = lerStorage('alprox_certificados');
-  const minhasTarefas = lerStorage('alprox_minhas_tarefas');
-  const tarefasEquipe = lerStorage('alprox_tarefas_equipe');
-  const clientes = lerStorage('alprox_clientes');
+/**
+ * Carrega eventos do mês especificado do Supabase
+ * @param {number} ano - Ano (ex: 2025)
+ * @param {number} mes - Mês (1-12)
+ * @returns {Promise<Object>} Mapa {data: [eventos]} para o mês
+ */
+async function carregarEventosDoMes(ano, mes) {
+  try {
+    // Calcular intervalo do mês
+    const inicioDoPeriodo = `${ano}-${String(mes).padStart(2, '0')}-01`;
+    const fimDoPeriodo = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-  const nomeCliente = (id) => (clientes.find(c => c.id === id) || {}).nome || '';
+    // Buscar dados em paralelo
+    const [prazos, tarefasPessoais, tarefasEquipe, certidoes, certificados, clientes] = await Promise.all([
+      supabase.from('prazos')
+        .select('*')
+        .eq('usuario_id', window.usuario_id)
+        .gte('data_vencimento', inicioDoPeriodo)
+        .lte('data_vencimento', fimDoPeriodo)
+        .eq('status', 'pendente'),
 
-  const eventos = [];
+      supabase.from('tarefas_pessoais')
+        .select('*')
+        .eq('usuario_id', window.usuario_id)
+        .gte('prazo', inicioDoPeriodo)
+        .lte('prazo', fimDoPeriodo)
+        .neq('status', 'feito'),
 
-  prazos.forEach(p => {
-    if (!p.vencimento || p.status === 'cumprido') return;
-    eventos.push({ data: p.vencimento, titulo: p.titulo + (nomeCliente(p.clienteId) ? ` · ${nomeCliente(p.clienteId)}` : ''), tipo: 'Prazo', cor: 'dourado', tela: 'tela-prazos' });
-  });
+      supabase.from('tarefas_equipe')
+        .select('*')
+        .or(`criado_por.eq.${window.usuario_id},atribuido_para.eq.${window.usuario_id}`)
+        .gte('prazo', inicioDoPeriodo)
+        .lte('prazo', fimDoPeriodo)
+        .neq('status', 'feito'),
 
-  certidoes.forEach(c => {
-    if (!c.validade) return;
-    eventos.push({ data: c.validade, titulo: `${c.tipo} · ${nomeCliente(c.clienteId)}`, tipo: 'Certidão', cor: 'verde', tela: 'tela-certidoes' });
-  });
+      supabase.from('certidoes')
+        .select('*')
+        .eq('usuario_id', window.usuario_id)
+        .gte('data_validade', inicioDoPeriodo)
+        .lte('data_validade', fimDoPeriodo),
 
-  certificados.forEach(c => {
-    if (!c.validade) return;
-    eventos.push({ data: c.validade, titulo: `${c.tipo} · ${nomeCliente(c.clienteId)}`, tipo: 'Certificado', cor: 'verde', tela: 'tela-certificados' });
-  });
+      supabase.from('certificados')
+        .select('*')
+        .eq('usuario_id', window.usuario_id)
+        .gte('data_validade', inicioDoPeriodo)
+        .lte('data_validade', fimDoPeriodo),
 
-  minhasTarefas.forEach(t => {
-    if (!t.prazo || t.status === 'feito') return;
-    eventos.push({ data: t.prazo, titulo: t.titulo, tipo: 'Minha tarefa', cor: 'vermelho', tela: 'tela-minhas-tarefas' });
-  });
+      supabase.from('clientes').select('id, nome_empresa')
+    ]);
 
-  tarefasEquipe.forEach(t => {
-    if (!t.prazo || t.status === 'feito') return;
-    eventos.push({ data: t.prazo, titulo: t.titulo, tipo: 'Tarefa da equipe', cor: 'vermelho', tela: 'tela-tarefas-equipe' });
-  });
+    // Mapa de clientes pra consulta rápida
+    const clientesMap = {};
+    (clientes.data || []).forEach(c => {
+      clientesMap[c.id] = c.nome_empresa;
+    });
 
-  return eventos;
+    const eventos = [];
+
+    // Prazos
+    (prazos.data || []).forEach(p => {
+      if (!p.data_vencimento) return;
+      const nomeCliente = p.cliente_id ? clientesMap[p.cliente_id] : '';
+      eventos.push({
+        data: p.data_vencimento,
+        titulo: p.titulo + (nomeCliente ? ` · ${nomeCliente}` : ''),
+        tipo: 'Prazo',
+        cor: 'dourado',
+        tela: 'tela-prazos'
+      });
+    });
+
+    // Tarefas pessoais
+    (tarefasPessoais.data || []).forEach(t => {
+      if (!t.prazo) return;
+      eventos.push({
+        data: t.prazo,
+        titulo: t.titulo,
+        tipo: 'Minha tarefa',
+        cor: 'vermelho',
+        tela: 'tela-minhas-tarefas'
+      });
+    });
+
+    // Tarefas da equipe
+    (tarefasEquipe.data || []).forEach(t => {
+      if (!t.prazo) return;
+      eventos.push({
+        data: t.prazo,
+        titulo: t.titulo,
+        tipo: 'Tarefa da equipe',
+        cor: 'vermelho',
+        tela: 'tela-tarefas-equipe'
+      });
+    });
+
+    // Certidões
+    (certidoes.data || []).forEach(c => {
+      if (!c.data_validade) return;
+      const nomeCliente = c.cliente_id ? clientesMap[c.cliente_id] : '';
+      eventos.push({
+        data: c.data_validade,
+        titulo: `${c.tipo}${nomeCliente ? ` · ${nomeCliente}` : ''}`,
+        tipo: 'Certidão',
+        cor: 'verde',
+        tela: 'tela-certidoes'
+      });
+    });
+
+    // Certificados
+    (certificados.data || []).forEach(c => {
+      if (!c.data_validade) return;
+      const nomeCliente = c.cliente_id ? clientesMap[c.cliente_id] : '';
+      eventos.push({
+        data: c.data_validade,
+        titulo: `${c.tipo}${nomeCliente ? ` · ${nomeCliente}` : ''}`,
+        tipo: 'Certificado',
+        cor: 'verde',
+        tela: 'tela-certificados'
+      });
+    });
+
+    // Agrupar eventos por dia
+    const diasComEventos = {};
+    eventos.forEach(ev => {
+      if (!diasComEventos[ev.data]) {
+        diasComEventos[ev.data] = [];
+      }
+      diasComEventos[ev.data].push(ev);
+    });
+
+    return diasComEventos;
+  } catch (error) {
+    console.error('Erro ao carregar eventos do mês:', error);
+    return {};
+  }
 }
 
-function renderizarCalendario() {
+async function renderizarCalendario() {
   const nomeMes = NOMES_MES[mesAtual];
   dashMesTituloEl.textContent = `${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} de ${anoAtual}`;
 
   dashCalendarioDiasEl.innerHTML = NOMES_DIA_SEMANA.map(d => `<span>${d}</span>`).join('');
 
-  const eventos = coletarEventosDoMes();
-  const eventosPorDia = {};
-  eventos.forEach(ev => {
-    if (!eventosPorDia[ev.data]) eventosPorDia[ev.data] = [];
-    eventosPorDia[ev.data].push(ev);
-  });
+  // Carregar eventos do Supabase
+  const eventosPorDia = await carregarEventosDoMes(anoAtual, mesAtual + 1);
 
   const primeiroDiaSemana = new Date(anoAtual, mesAtual, 1).getDay();
   const totalDias = new Date(anoAtual, mesAtual + 1, 0).getDate();
@@ -157,9 +264,9 @@ function renderizarCalendario() {
       celula.appendChild(pontos);
     }
 
-    celula.addEventListener('click', () => {
+    celula.addEventListener('click', async () => {
       diaSelecionado = dataISO;
-      renderizarCalendario();
+      await renderizarCalendario();
     });
 
     dashCalendarioGradeEl.appendChild(celula);
@@ -194,21 +301,38 @@ function renderizarDiaSelecionado(eventosPorDia) {
   });
 }
 
-dashMesAnteriorEl.addEventListener('click', () => {
+dashMesAnteriorEl.addEventListener('click', async () => {
   mesAtual--;
   if (mesAtual < 0) { mesAtual = 11; anoAtual--; }
   diaSelecionado = null;
-  renderizarCalendario();
+  await renderizarCalendario();
 });
 
-dashMesSeguinteEl.addEventListener('click', () => {
+dashMesSeguinteEl.addEventListener('click', async () => {
   mesAtual++;
   if (mesAtual > 11) { mesAtual = 0; anoAtual++; }
   diaSelecionado = null;
-  renderizarCalendario();
+  await renderizarCalendario();
 });
 
 // ---------- Início ----------
 
-renderizarCards();
-renderizarCalendario();
+async function inicializarDashboard() {
+  await renderizarCards();
+  await renderizarCalendario();
+}
+
+// Se usuario_id já existe (já autenticado), carregar dashboard
+if (window.usuario_id) {
+  inicializarDashboard();
+}
+
+// Listener para quando usuário fizer login
+window.addEventListener('usuario-logado', () => {
+  inicializarDashboard();
+});
+
+// Listener para recarregar dashboard quando dados mudam
+window.addEventListener('dados-atualizados', () => {
+  inicializarDashboard();
+});
