@@ -30,6 +30,12 @@ export async function inicializarSessao() {
       window.supabase_usuario_id = usuario_id;
       window.supabase_usuario_nome = usuario_nome;
       console.log('✅ Sessão inicializada para:', usuario_nome);
+
+      // Disparar evento para notificar outros scripts que sessão está pronta
+      window.dispatchEvent(new CustomEvent('usuario-logado', {
+        detail: { usuario_id: usuario_id }
+      }));
+
       return true; // autenticado
     }
     console.log('ℹ️  Nenhuma sessão ativa');
@@ -58,4 +64,7 @@ export async function fazerLogout() {
 }
 
 // Inicializar sessão automaticamente quando este módulo carregar
-inicializarSessao();
+// IMPORTANTE: Aguarda completar antes de deixar outros scripts rodarem
+(async () => {
+  await inicializarSessao();
+})();
