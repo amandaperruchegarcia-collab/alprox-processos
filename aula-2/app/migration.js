@@ -74,7 +74,7 @@ async function migrarProcessos(usuario_id) {
       criado_por: usuario_id
     }));
 
-    const { error } = await supabase.from('processos').insert(processosFormatados);
+    const { error } = await supabase.from('alprox_processos').insert(processosFormatados);
 
     if (error) {
       console.error('❌ Erro ao migrar processos:', error);
@@ -107,7 +107,7 @@ async function migrarClientes(usuario_id) {
       criado_por: usuario_id
     }));
 
-    const { error } = await supabase.from('clientes').insert(clientesFormatados);
+    const { error } = await supabase.from('alprox_clientes').insert(clientesFormatados);
 
     if (error) {
       console.error('❌ Erro ao migrar clientes:', error);
@@ -137,7 +137,7 @@ async function migrarFluxos(usuario_id) {
     for (const fluxo of fluxos) {
       // Inserir fluxo
       const { data: fluxoInserido, error: erroFluxo } = await supabase
-        .from('fluxos')
+        .from('alprox_fluxos')
         .insert({
           nome: fluxo.nome || '',
           criado_por: usuario_id
@@ -165,7 +165,7 @@ async function migrarFluxos(usuario_id) {
         }));
 
         const { error: erroPassos } = await supabase
-          .from('passos_fluxo')
+          .from('alprox_passos_fluxo')
           .insert(passosFormatados);
 
         if (erroPassos) {
@@ -268,7 +268,7 @@ async function migrarPrazos(usuario_id) {
       status: p.status || 'pendente'
     }));
 
-    const { error } = await supabase.from('prazos').insert(prazosFormatados);
+    const { error } = await supabase.from('alprox_prazos').insert(prazosFormatados);
 
     if (error) {
       console.error('❌ Erro ao migrar prazos:', error);
@@ -302,7 +302,7 @@ async function migrarCertidoes(usuario_id) {
       status: (c.dataValidade && c.dataValidade < hoje) ? 'vencida' : (c.status || 'válida')
     }));
 
-    const { error } = await supabase.from('certidoes').insert(certiduesFormatadas);
+    const { error } = await supabase.from('alprox_certidoes').insert(certiduesFormatadas);
 
     if (error) {
       console.error('❌ Erro ao migrar certidões:', error);
@@ -337,7 +337,7 @@ async function migrarCertificados(usuario_id) {
       status: (c.dataValidade && c.dataValidade < hoje) ? 'vencido' : (c.status || 'válido')
     }));
 
-    const { error } = await supabase.from('certificados').insert(certificadosFormatados);
+    const { error } = await supabase.from('alprox_certificados').insert(certificadosFormatados);
 
     if (error) {
       console.error('❌ Erro ao migrar certificados:', error);

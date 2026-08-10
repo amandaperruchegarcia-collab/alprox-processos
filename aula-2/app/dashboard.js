@@ -25,14 +25,14 @@ function criarCard(numero, label, aoClicar, alerta) {
 async function carregarResumoDashboard() {
   try {
     const [processos, fluxos, minhasTarefas, tarefasEquipe, prazos, certidoes, certificados, clientes] = await Promise.all([
-      supabase.from('processos').select('*', { count: 'exact', head: true }).eq('status', 'ativo'),
-      supabase.from('fluxos').select('*', { count: 'exact', head: true }),
+      supabase.from('alprox_processos').select('*', { count: 'exact', head: true }).eq('status', 'ativo'),
+      supabase.from('alprox_fluxos').select('*', { count: 'exact', head: true }),
       supabase.from('alprox_tarefas_pessoais').select('*').eq('usuario_id', window.supabase_usuario_id),
       supabase.from('alprox_tarefas_equipe').select('*').or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`),
-      supabase.from('prazos').select('*').eq('usuario_id', window.supabase_usuario_id),
-      supabase.from('certidoes').select('*').eq('usuario_id', window.supabase_usuario_id),
-      supabase.from('certificados').select('*').eq('usuario_id', window.supabase_usuario_id),
-      supabase.from('clientes').select('*', { count: 'exact', head: true })
+      supabase.from('alprox_prazos').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('alprox_certidoes').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('alprox_certificados').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('alprox_clientes').select('*', { count: 'exact', head: true })
     ]);
 
     const hoje = hojeISO();
@@ -131,7 +131,7 @@ async function carregarEventosDoMes(ano, mes) {
         .gte('data_validade', inicioDoPeriodo)
         .lte('data_validade', fimDoPeriodo),
 
-      supabase.from('clientes').select('id, nome_empresa')
+      supabase.from('alprox_clientes').select('id, nome_empresa')
     ]);
 
     // Mapa de clientes pra consulta rápida

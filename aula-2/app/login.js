@@ -63,14 +63,14 @@ export async function fazerLogin(email, senha) {
 
     // Verificar se colaborador existe na tabela
     const { data: colaborador, error: erroFetch } = await supabase
-      .from('colaboradores')
+      .from('alprox_colaboradores')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
     // Se não existe, criar entrada
     if (!colaborador) {
-      const { error: erroInsert } = await supabase.from('colaboradores').insert({
+      const { error: erroInsert } = await supabase.from('alprox_colaboradores').insert({
         id: userId,
         nome: email.split('@')[0],
         email: email,
@@ -160,7 +160,7 @@ export async function fazerSignup(email, senha, senhaConfirmacao) {
 
       // Get userId from login response and create colaborador entry
       const recoveredUserId = loginData.user.id;
-      const { error: erroInsert } = await supabase.from('colaboradores').insert({
+      const { error: erroInsert } = await supabase.from('alprox_colaboradores').insert({
         id: recoveredUserId,
         nome: email.split('@')[0],
         email: email,
@@ -179,7 +179,7 @@ export async function fazerSignup(email, senha, senhaConfirmacao) {
     } else {
       // Normal path - have userId, create colaborador entry then login
       // Criar entrada na tabela colaboradores
-      const { error: erroInsert } = await supabase.from('colaboradores').insert({
+      const { error: erroInsert } = await supabase.from('alprox_colaboradores').insert({
         id: userId,
         nome: email.split('@')[0],
         email: email,

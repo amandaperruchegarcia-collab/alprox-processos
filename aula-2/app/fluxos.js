@@ -132,7 +132,7 @@ async function nomeProcesso(processoId) {
   if (!processoId) return null;
 
   const { data, error } = await supabase
-    .from('processos')
+    .from('alprox_processos')
     .select('nome')
     .eq('id', processoId)
     .single();
