@@ -56,3 +56,6 @@ export async function fazerLogout() {
     console.error('❌ Erro ao fazer logout:', error);
   }
 }
+
+// Inicializar sessão automaticamente quando este módulo carregar
+inicializarSessao();
