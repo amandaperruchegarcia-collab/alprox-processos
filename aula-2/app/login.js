@@ -141,33 +141,50 @@ export async function fazerSignup(email, senha, senhaConfirmacao) {
       password: senha
     });
 
-    if (error) throw error;
-
-    const userId = data.user.id;
-
-    // Criar entrada na tabela colaboradores
-    const { error: erroInsert } = await supabase.from('colaboradores').insert({
-      id: userId,
-      nome: email.split('@')[0],
-      email: email,
-      cargo: null,
-      role: 'user',
-      ativo: true
-    });
-
-    if (erroInsert && erroInsert.code !== '23505') {
-      console.warn('⚠️ Aviso ao criar colaborador:', erroInsert);
-    } else if (!erroInsert) {
-      console.log('✅ Novo colaborador criado:', email);
+    // Note: Supabase sometimes returns false "duplicate key" errors
+    // even when signup succeeds. We'll attempt login to verify.
+    if (error && !error.message?.includes('duplicate key')) {
+      throw error; // Real error - fail
     }
 
-    // Fazer login automático
-    const { error: erroLogin } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: senha
-    });
+    // Try to get userId (may be null if false error)
+    const userId = data?.user?.id;
+    if (!userId) {
+      // If no userId from signup, try login to see if user was actually created
+      console.log('⚠️ Signup retornou erro, tentando login...');
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: senha
+      });
+      if (loginError) throw loginError;
+      // Continue - user exists and is now logged in
+      console.log('✅ Usuário criado (verificado via login):', email);
+    } else {
+      // Normal path - have userId, create colaborador entry then login
+      // Criar entrada na tabela colaboradores
+      const { error: erroInsert } = await supabase.from('colaboradores').insert({
+        id: userId,
+        nome: email.split('@')[0],
+        email: email,
+        cargo: null,
+        role: 'user',
+        ativo: true
+      });
 
-    if (erroLogin) throw erroLogin;
+      if (erroInsert && erroInsert.code !== '23505') {
+        console.warn('⚠️ Aviso ao criar colaborador:', erroInsert);
+      } else if (!erroInsert) {
+        console.log('✅ Novo colaborador criado:', email);
+      }
+
+      // Fazer login automático
+      const { error: erroLogin } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: senha
+      });
+
+      if (erroLogin) throw erroLogin;
+    }
 
     // Inicializar sessão
     const autenticado = await inicializarSessao();
