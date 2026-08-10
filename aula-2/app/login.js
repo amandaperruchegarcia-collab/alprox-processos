@@ -115,6 +115,87 @@ export async function fazerLogin(email, senha) {
 }
 
 /**
+ * Registra um novo usuário e faz login automaticamente
+ * @param {string} email - Email do usuário
+ * @param {string} senha - Senha do usuário
+ * @param {string} senhaConfirmacao - Confirmação de senha
+ */
+export async function fazerSignup(email, senha, senhaConfirmacao) {
+  const signupForm = document.getElementById('signup-form');
+  const signupErro = document.getElementById('signup-erro');
+  const telaLogin = document.getElementById('tela-login');
+  const telaDashboard = document.getElementById('tela-dashboard');
+
+  try {
+    // Validar dados
+    const erroValidacao = validarSignup(email, senha, senhaConfirmacao);
+    if (erroValidacao) {
+      signupErro.textContent = erroValidacao;
+      signupErro.style.display = 'block';
+      return;
+    }
+
+    // Registrar usuário via Supabase
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: senha
+    });
+
+    if (error) throw error;
+
+    const userId = data.user.id;
+
+    // Criar entrada na tabela colaboradores
+    const { error: erroInsert } = await supabase.from('colaboradores').insert({
+      id: userId,
+      nome: email.split('@')[0],
+      email: email,
+      cargo: null,
+      role: 'user',
+      ativo: true
+    });
+
+    if (erroInsert && erroInsert.code !== '23505') {
+      console.warn('⚠️ Aviso ao criar colaborador:', erroInsert);
+    } else if (!erroInsert) {
+      console.log('✅ Novo colaborador criado:', email);
+    }
+
+    // Fazer login automático
+    const { error: erroLogin } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: senha
+    });
+
+    if (erroLogin) throw erroLogin;
+
+    // Inicializar sessão
+    const autenticado = await inicializarSessao();
+    if (autenticado) {
+      // Ocultar login, mostrar dashboard
+      telaLogin.classList.remove('ativa');
+      telaDashboard.classList.add('ativa');
+
+      // Limpar formulários
+      document.getElementById('login-form').reset();
+      signupForm.reset();
+      signupErro.style.display = 'none';
+
+      // Disparar evento
+      window.dispatchEvent(new CustomEvent('usuario-logado', {
+        detail: { usuario_id: window.supabase_usuario_id }
+      }));
+
+      console.log('✅ Signup e login bem-sucedidos para:', email);
+    }
+  } catch (error) {
+    console.error('❌ Erro de signup:', error);
+    signupErro.textContent = error.message || 'Erro ao criar conta. Tente novamente.';
+    signupErro.style.display = 'block';
+  }
+}
+
+/**
  * Verifica se o usuário está autenticado
  * @returns {Promise<boolean>} true se autenticado, false caso contrário
  */
