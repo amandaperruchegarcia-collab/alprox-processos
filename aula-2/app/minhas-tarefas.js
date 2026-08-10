@@ -233,7 +233,10 @@ function renderizarTarefas() {
     .slice()
     .sort((a, b) => (a.prazo || '9999').localeCompare(b.prazo || '9999'))
     .forEach(tarefa => {
-      listasPorStatus[tarefa.status].appendChild(criarTarefaCard(tarefa));
+      const statusKey = tarefa.status.replace('-', '_'); // Converter 'a-fazer' para 'a_fazer'
+      if (listasPorStatus[statusKey]) {
+        listasPorStatus[statusKey].appendChild(criarTarefaCard(tarefa));
+      }
     });
 
   const vazio = tarefas.length === 0;
