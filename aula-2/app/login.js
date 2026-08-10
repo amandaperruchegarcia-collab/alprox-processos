@@ -286,6 +286,40 @@ export async function fazerLogout() {
   }
 }
 
+// Event listener para o link "Criar conta"
+const linkCriarConta = document.getElementById('link-criar-conta');
+if (linkCriarConta) {
+  linkCriarConta.addEventListener('click', (e) => {
+    e.preventDefault();
+    mudarParaSignup();
+  });
+}
+
+// Event listener para o link "Voltar para login"
+const linkVoltarLogin = document.getElementById('link-voltar-login');
+if (linkVoltarLogin) {
+  linkVoltarLogin.addEventListener('click', (e) => {
+    e.preventDefault();
+    mudarParaLogin();
+  });
+}
+
+// Event listener para o formulário de signup
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const signupErro = document.getElementById('signup-erro');
+    signupErro.style.display = 'none';
+
+    const email = document.getElementById('signup-email').value.trim();
+    const senha = document.getElementById('signup-senha').value;
+    const senhaConfirmacao = document.getElementById('signup-senha-confirma').value;
+
+    await fazerSignup(email, senha, senhaConfirmacao);
+  });
+}
+
 // Event listener para o formulário de login
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
