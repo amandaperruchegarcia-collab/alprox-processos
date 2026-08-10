@@ -1,5 +1,5 @@
 // aula-2/app/supabase-config.js
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
 
 // Credenciais do projeto Supabase (públicas)
 const SUPABASE_URL = 'https://aefiardlggehjlnrjavz.supabase.co';
