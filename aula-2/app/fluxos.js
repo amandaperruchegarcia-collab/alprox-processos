@@ -23,7 +23,7 @@ async function salvarFluxo(fluxo) {
     .from('alprox_fluxos')
     .insert({
       nome: fluxo.nome,
-      criado_por: usuario_id
+      criado_por: window.supabase_usuario_id
     })
     .select();
 

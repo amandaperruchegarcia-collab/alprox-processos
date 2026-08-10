@@ -73,8 +73,6 @@ async function carregarHistorico(cliente_id) {
  */
 async function salvarCliente(cliente) {
   try {
-    const usuario_id = await obterUsuarioId();
-
     const { data, error } = await window.supabase
       .from('alprox_clientes')
       .insert({
@@ -83,7 +81,7 @@ async function salvarCliente(cliente) {
         contato: cliente.contato || '',
         responsavel: cliente.responsavelId || cliente.responsavel || '',
         observacoes: cliente.observacoes || '',
-        criado_por: usuario_id
+        criado_por: window.supabase_usuario_id
       })
       .select();
 
@@ -159,8 +157,6 @@ async function deletarCliente(id) {
  */
 async function adicionarAnotacao(cliente_id, anotacao, data = null) {
   try {
-    const usuario_id = await obterUsuarioId();
-
     const dataFormatada = data || new Date().toISOString().split('T')[0];
 
     const { data: resultado, error } = await window.supabase
@@ -169,7 +165,7 @@ async function adicionarAnotacao(cliente_id, anotacao, data = null) {
         cliente_id: cliente_id,
         data: dataFormatada,
         anotacao: anotacao,
-        criado_por: usuario_id
+        criado_por: window.supabase_usuario_id
       })
       .select();
 

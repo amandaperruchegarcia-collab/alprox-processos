@@ -9,12 +9,7 @@ let certificados = [];
  */
 async function carregarCertificados() {
   try {
-    // Importa usuario_id do arquivo supabase-config.js
-    const { usuario_id } = await import('./supabase-config.js').then(m => ({
-      usuario_id: m.usuario_id
-    }));
-
-    if (!usuario_id) {
+    if (!window.supabase_usuario_id) {
       console.error('Erro: usuario_id não definido');
       return [];
     }
@@ -22,7 +17,7 @@ async function carregarCertificados() {
     const { data, error } = await supabase
       .from('certificados')
       .select('*')
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_id', window.supabase_usuario_id)
       .order('data_validade', { ascending: true });
 
     if (error) {
@@ -60,11 +55,7 @@ async function carregarCertificados() {
  */
 async function salvarCertificado(certificado) {
   try {
-    const { usuario_id } = await import('./supabase-config.js').then(m => ({
-      usuario_id: m.usuario_id
-    }));
-
-    if (!usuario_id) {
+    if (!window.supabase_usuario_id) {
       throw new Error('usuario_id não definido');
     }
 
@@ -75,7 +66,7 @@ async function salvarCertificado(certificado) {
     const { error } = await supabase
       .from('certificados')
       .insert({
-        usuario_id: usuario_id,
+        usuario_id: window.supabase_usuario_id,
         cliente_id: certificado.clienteId || null,
         tipo: certificado.tipo,
         data_emissao: certificado.emissao || null,
