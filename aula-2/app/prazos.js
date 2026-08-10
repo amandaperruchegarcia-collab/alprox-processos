@@ -1,7 +1,7 @@
 // Função para carregar prazos do Supabase
 async function carregarPrazos() {
   try {
-    if (!window.supabase || !window.usuario_id) {
+    if (!window.supabase || !window.supabase_usuario_id) {
       console.error('Supabase não inicializado ou usuário não logado');
       return [];
     }
@@ -9,7 +9,7 @@ async function carregarPrazos() {
     const { data, error } = await window.supabase
       .from('prazos')
       .select('*')
-      .eq('usuario_id', window.usuario_id)
+      .eq('usuario_id', window.supabase_usuario_id)
       .order('data_vencimento', { ascending: true });
 
     if (error) {
@@ -33,14 +33,14 @@ async function carregarPrazos() {
 // Função para salvar novo prazo no Supabase
 async function salvarPrazo(prazo) {
   try {
-    if (!window.supabase || !window.usuario_id) {
+    if (!window.supabase || !window.supabase_usuario_id) {
       throw new Error('Supabase não inicializado ou usuário não logado');
     }
 
     const { error } = await window.supabase
       .from('prazos')
       .insert({
-        usuario_id: window.usuario_id,
+        usuario_id: window.supabase_usuario_id,
         titulo: prazo.titulo,
         cliente_id: prazo.clienteId || null,
         data_vencimento: prazo.vencimento,
@@ -76,7 +76,7 @@ async function atualizarPrazo(id, prazo) {
         atualizado_em: new Date().toISOString()
       })
       .eq('id', id)
-      .eq('usuario_id', window.usuario_id);
+      .eq('usuario_id', window.supabase_usuario_id);
 
     if (error) {
       console.error('Erro ao atualizar prazo:', error);
@@ -99,7 +99,7 @@ async function deletarPrazo(id) {
       .from('prazos')
       .delete()
       .eq('id', id)
-      .eq('usuario_id', window.usuario_id);
+      .eq('usuario_id', window.supabase_usuario_id);
 
     if (error) {
       console.error('Erro ao deletar prazo:', error);

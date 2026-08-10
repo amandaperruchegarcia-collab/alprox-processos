@@ -22,7 +22,7 @@ async function carregarCertidoes() {
     const { data, error } = await window.supabase
       .from('certidoes')
       .select('*')
-      .eq('usuario_id', window.usuario_id);
+      .eq('usuario_id', window.supabase_usuario_id);
 
     if (error) {
       console.error('Erro ao carregar certidões:', error);
@@ -54,7 +54,7 @@ async function salvarCertidao(certidao) {
     const { data, error } = await window.supabase
       .from('certidoes')
       .insert({
-        usuario_id: window.usuario_id,
+        usuario_id: window.supabase_usuario_id,
         cliente_id: certidao.cliente_id || null,
         tipo: certidao.tipo,
         data_emissao: certidao.data_emissao,

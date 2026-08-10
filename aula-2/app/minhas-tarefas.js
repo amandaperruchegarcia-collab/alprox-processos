@@ -3,7 +3,7 @@ async function carregarTarefas() {
   const { data, error } = await window.supabase
     .from('alprox_s_s_is')
     .select('*')
-    .eq('usuario_id', window.usuario_id)
+    .eq('usuario_id', window.supabase_usuario_id)
     .order('prazo', { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -17,7 +17,7 @@ async function salvarTarefa(tarefa) {
   const { error } = await window.supabase
     .from('alprox_s_s_is')
     .insert({
-      usuario_id: window.usuario_id,
+      usuario_id: window.supabase_usuario_id,
       titulo: tarefa.titulo,
       descricao: tarefa.descricao || '',
       prazo: tarefa.prazo || null,
@@ -41,7 +41,7 @@ async function atualizarTarefa(id, tarefaAtualizada) {
       atualizado_em: new Date().toISOString()
     })
     .eq('id', id)
-    .eq('usuario_id', window.usuario_id);
+    .eq('usuario_id', window.supabase_usuario_id);
 
   if (error) {
     console.error('Erro ao atualizar tarefa:', error);
@@ -54,7 +54,7 @@ async function deletarTarefa(id) {
     .from('alprox_s_s_is')
     .delete()
     .eq('id', id)
-    .eq('usuario_id', window.usuario_id);
+    .eq('usuario_id', window.supabase_usuario_id);
 
   if (error) {
     console.error('Erro ao deletar tarefa:', error);
@@ -245,7 +245,7 @@ function renderizarTarefas() {
 
 // Carregar tarefas ao inicializar
 async function inicializarTarefas() {
-  if (!window.usuario_id) {
+  if (!window.supabase_usuario_id) {
     console.warn('Aguardando autenticação...');
     // Retentar após autenticação
     window.addEventListener('usuario-logado', inicializarTarefas);

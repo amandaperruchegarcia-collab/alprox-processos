@@ -1,0 +1,108 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e5]:
+      - text: Alprox
+      - strong [ref=e6]: Processos
+    - button "Sair" [ref=e67] [cursor=pointer]
+  - main [ref=e7]:
+    - generic [ref=e68]:
+      - heading "Dashboard" [level=1] [ref=e69]
+      - paragraph [ref=e70]: Visão geral do escritório e o que precisa de atenção.
+      - generic [ref=e76]:
+        - button "0 Processos ativos" [ref=e179] [cursor=pointer]:
+          - generic [ref=e180]: "0"
+          - generic [ref=e181]: Processos ativos
+        - button "0 Fluxos cadastrados" [ref=e182] [cursor=pointer]:
+          - generic [ref=e183]: "0"
+          - generic [ref=e184]: Fluxos cadastrados
+        - button "0 Minhas tarefas pendentes" [ref=e185] [cursor=pointer]:
+          - generic [ref=e186]: "0"
+          - generic [ref=e187]: Minhas tarefas pendentes
+        - button "0 Tarefas da equipe pendentes" [ref=e188] [cursor=pointer]:
+          - generic [ref=e189]: "0"
+          - generic [ref=e190]: Tarefas da equipe pendentes
+        - button "0 Prazos vencidos" [ref=e191] [cursor=pointer]:
+          - generic [ref=e192]: "0"
+          - generic [ref=e193]: Prazos vencidos
+        - button "0 Certidões vencidas" [ref=e194] [cursor=pointer]:
+          - generic [ref=e195]: "0"
+          - generic [ref=e196]: Certidões vencidas
+        - button "0 Certificados vencidos" [ref=e197] [cursor=pointer]:
+          - generic [ref=e198]: "0"
+          - generic [ref=e199]: Certificados vencidos
+        - button "4 Clientes cadastrados" [ref=e200] [cursor=pointer]:
+          - generic [ref=e201]: "4"
+          - generic [ref=e202]: Clientes cadastrados
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - button "‹" [ref=e73] [cursor=pointer]
+          - heading "Agosto de 2026" [level=2] [ref=e101]
+          - button "›" [ref=e74] [cursor=pointer]
+        - generic [ref=e102]:
+          - generic [ref=e203]: dom
+          - generic [ref=e204]: seg
+          - generic [ref=e205]: ter
+          - generic [ref=e206]: qua
+          - generic [ref=e207]: qui
+          - generic [ref=e208]: sex
+          - generic [ref=e209]: sáb
+        - generic [ref=e110]:
+          - generic [ref=e216] [cursor=pointer]: "1"
+          - generic [ref=e218] [cursor=pointer]: "2"
+          - generic [ref=e220] [cursor=pointer]: "3"
+          - generic [ref=e222] [cursor=pointer]: "4"
+          - generic [ref=e224] [cursor=pointer]: "5"
+          - generic [ref=e226] [cursor=pointer]: "6"
+          - generic [ref=e228] [cursor=pointer]: "7"
+          - generic [ref=e230] [cursor=pointer]: "8"
+          - generic [ref=e232] [cursor=pointer]: "9"
+          - generic [ref=e234] [cursor=pointer]: "10"
+          - generic [ref=e236] [cursor=pointer]: "11"
+          - generic [ref=e238] [cursor=pointer]: "12"
+          - generic [ref=e240] [cursor=pointer]: "13"
+          - generic [ref=e242] [cursor=pointer]: "14"
+          - generic [ref=e244] [cursor=pointer]: "15"
+          - generic [ref=e246] [cursor=pointer]: "16"
+          - generic [ref=e248] [cursor=pointer]: "17"
+          - generic [ref=e250] [cursor=pointer]: "18"
+          - generic [ref=e252] [cursor=pointer]: "19"
+          - generic [ref=e254] [cursor=pointer]: "20"
+          - generic [ref=e256] [cursor=pointer]: "21"
+          - generic [ref=e258] [cursor=pointer]: "22"
+          - generic [ref=e260] [cursor=pointer]: "23"
+          - generic [ref=e262] [cursor=pointer]: "24"
+          - generic [ref=e264] [cursor=pointer]: "25"
+          - generic [ref=e266] [cursor=pointer]: "26"
+          - generic [ref=e268] [cursor=pointer]: "27"
+          - generic [ref=e270] [cursor=pointer]: "28"
+          - generic [ref=e272] [cursor=pointer]: "29"
+          - generic [ref=e274] [cursor=pointer]: "30"
+          - generic [ref=e276] [cursor=pointer]: "31"
+  - navigation [ref=e25]:
+    - button "🏠 Dashboard" [ref=e26] [cursor=pointer]:
+      - generic [ref=e27]: 🏠
+      - generic [ref=e28]: Dashboard
+    - button "📋 Processos" [ref=e29] [cursor=pointer]:
+      - generic [ref=e30]: 📋
+      - generic [ref=e31]: Processos
+    - button "🔀 Fluxos" [ref=e32] [cursor=pointer]:
+      - generic [ref=e33]: 🔀
+      - generic [ref=e34]: Fluxos
+    - button "✅ Minhas tarefas" [ref=e35] [cursor=pointer]:
+      - generic [ref=e36]: ✅
+      - generic [ref=e37]: Minhas tarefas
+    - button "👥 Equipe" [ref=e38] [cursor=pointer]:
+      - generic [ref=e39]: 👥
+      - generic [ref=e40]: Equipe
+    - button "⏰ Prazos" [ref=e41] [cursor=pointer]:
+      - generic [ref=e42]: ⏰
+      - generic [ref=e43]: Prazos
+    - button "📄 Certidões" [ref=e44] [cursor=pointer]:
+      - generic [ref=e45]: 📄
+      - generic [ref=e46]: Certidões
+    - button "🔐 Certificados" [ref=e47] [cursor=pointer]:
+      - generic [ref=e48]: 🔐
+      - generic [ref=e49]: Certificados
+    - button "🏢 Clientes" [ref=e50] [cursor=pointer]:
+      - generic [ref=e51]: 🏢
+      - generic [ref=e52]: Clientes

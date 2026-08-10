@@ -1,0 +1,42 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e5]:
+      - text: Alprox
+      - strong [ref=e6]: Processos
+    - button "Sair" [ref=e67] [cursor=pointer]
+  - main [ref=e7]:
+    - generic [ref=e68]:
+      - heading "Dashboard" [level=1] [ref=e69]
+      - paragraph [ref=e70]: Visão geral do escritório e o que precisa de atenção.
+      - generic [ref=e72]:
+        - button "‹" [ref=e73] [cursor=pointer]
+        - heading [level=2]
+        - button "›" [ref=e74] [cursor=pointer]
+  - navigation [ref=e25]:
+    - button "🏠 Dashboard" [ref=e26] [cursor=pointer]:
+      - generic [ref=e27]: 🏠
+      - generic [ref=e28]: Dashboard
+    - button "📋 Processos" [ref=e29] [cursor=pointer]:
+      - generic [ref=e30]: 📋
+      - generic [ref=e31]: Processos
+    - button "🔀 Fluxos" [ref=e32] [cursor=pointer]:
+      - generic [ref=e33]: 🔀
+      - generic [ref=e34]: Fluxos
+    - button "✅ Minhas tarefas" [ref=e35] [cursor=pointer]:
+      - generic [ref=e36]: ✅
+      - generic [ref=e37]: Minhas tarefas
+    - button "👥 Equipe" [ref=e38] [cursor=pointer]:
+      - generic [ref=e39]: 👥
+      - generic [ref=e40]: Equipe
+    - button "⏰ Prazos" [ref=e41] [cursor=pointer]:
+      - generic [ref=e42]: ⏰
+      - generic [ref=e43]: Prazos
+    - button "📄 Certidões" [ref=e44] [cursor=pointer]:
+      - generic [ref=e45]: 📄
+      - generic [ref=e46]: Certidões
+    - button "🔐 Certificados" [ref=e47] [cursor=pointer]:
+      - generic [ref=e48]: 🔐
+      - generic [ref=e49]: Certificados
+    - button "🏢 Clientes" [ref=e50] [cursor=pointer]:
+      - generic [ref=e51]: 🏢
+      - generic [ref=e52]: Clientes

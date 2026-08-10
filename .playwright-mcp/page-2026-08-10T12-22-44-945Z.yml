@@ -1,0 +1,59 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e5]:
+      - text: Alprox
+      - strong [ref=e6]: Processos
+    - button "Sair" [active] [ref=e67] [cursor=pointer]
+  - main [ref=e7]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - img "Alprox" [ref=e12]
+        - paragraph [ref=e13]:
+          - text: Alprox
+          - strong [ref=e14]: Processos
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]: Email
+          - textbox "Email" [ref=e56]:
+            - /placeholder: seu@email.com
+        - generic [ref=e57]:
+          - generic [ref=e58]: Senha
+          - textbox "Senha" [ref=e59]:
+            - /placeholder: ••••••••
+        - generic [ref=e60]:
+          - generic [ref=e61]: Confirmar Senha
+          - textbox "Confirmar Senha" [ref=e62]:
+            - /placeholder: ••••••••
+        - button "Criar Conta" [ref=e63] [cursor=pointer]
+        - paragraph [ref=e64]:
+          - text: Já tem conta?
+          - link "Fazer login" [ref=e65] [cursor=pointer]:
+            - /url: "#"
+  - navigation [ref=e25]:
+    - button "🏠 Dashboard" [ref=e26] [cursor=pointer]:
+      - generic [ref=e27]: 🏠
+      - generic [ref=e28]: Dashboard
+    - button "📋 Processos" [ref=e29] [cursor=pointer]:
+      - generic [ref=e30]: 📋
+      - generic [ref=e31]: Processos
+    - button "🔀 Fluxos" [ref=e32] [cursor=pointer]:
+      - generic [ref=e33]: 🔀
+      - generic [ref=e34]: Fluxos
+    - button "✅ Minhas tarefas" [ref=e35] [cursor=pointer]:
+      - generic [ref=e36]: ✅
+      - generic [ref=e37]: Minhas tarefas
+    - button "👥 Equipe" [ref=e38] [cursor=pointer]:
+      - generic [ref=e39]: 👥
+      - generic [ref=e40]: Equipe
+    - button "⏰ Prazos" [ref=e41] [cursor=pointer]:
+      - generic [ref=e42]: ⏰
+      - generic [ref=e43]: Prazos
+    - button "📄 Certidões" [ref=e44] [cursor=pointer]:
+      - generic [ref=e45]: 📄
+      - generic [ref=e46]: Certidões
+    - button "🔐 Certificados" [ref=e47] [cursor=pointer]:
+      - generic [ref=e48]: 🔐
+      - generic [ref=e49]: Certificados
+    - button "🏢 Clientes" [ref=e50] [cursor=pointer]:
+      - generic [ref=e51]: 🏢
+      - generic [ref=e52]: Clientes

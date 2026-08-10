@@ -27,11 +27,11 @@ async function carregarResumoDashboard() {
     const [processos, fluxos, minhasTarefas, tarefasEquipe, prazos, certidoes, certificados, clientes] = await Promise.all([
       supabase.from('processos').select('*', { count: 'exact', head: true }).eq('status', 'ativo'),
       supabase.from('fluxos').select('*', { count: 'exact', head: true }),
-      supabase.from('tarefas_pessoais').select('*').eq('usuario_id', window.usuario_id),
-      supabase.from('tarefas_equipe').select('*').or(`criado_por.eq.${window.usuario_id},atribuido_para.eq.${window.usuario_id}`),
-      supabase.from('prazos').select('*').eq('usuario_id', window.usuario_id),
-      supabase.from('certidoes').select('*').eq('usuario_id', window.usuario_id),
-      supabase.from('certificados').select('*').eq('usuario_id', window.usuario_id),
+      supabase.from('tarefas_pessoais').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('tarefas_equipe').select('*').or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`),
+      supabase.from('prazos').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('certidoes').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('certificados').select('*').eq('usuario_id', window.supabase_usuario_id),
       supabase.from('clientes').select('*', { count: 'exact', head: true })
     ]);
 
@@ -100,34 +100,34 @@ async function carregarEventosDoMes(ano, mes) {
     const [prazos, tarefasPessoais, tarefasEquipe, certidoes, certificados, clientes] = await Promise.all([
       supabase.from('prazos')
         .select('*')
-        .eq('usuario_id', window.usuario_id)
+        .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_vencimento', inicioDoPeriodo)
         .lte('data_vencimento', fimDoPeriodo)
         .eq('status', 'pendente'),
 
       supabase.from('tarefas_pessoais')
         .select('*')
-        .eq('usuario_id', window.usuario_id)
+        .eq('usuario_id', window.supabase_usuario_id)
         .gte('prazo', inicioDoPeriodo)
         .lte('prazo', fimDoPeriodo)
         .neq('status', 'feito'),
 
       supabase.from('tarefas_equipe')
         .select('*')
-        .or(`criado_por.eq.${window.usuario_id},atribuido_para.eq.${window.usuario_id}`)
+        .or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`)
         .gte('prazo', inicioDoPeriodo)
         .lte('prazo', fimDoPeriodo)
         .neq('status', 'feito'),
 
       supabase.from('certidoes')
         .select('*')
-        .eq('usuario_id', window.usuario_id)
+        .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_validade', inicioDoPeriodo)
         .lte('data_validade', fimDoPeriodo),
 
       supabase.from('certificados')
         .select('*')
-        .eq('usuario_id', window.usuario_id)
+        .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_validade', inicioDoPeriodo)
         .lte('data_validade', fimDoPeriodo),
 
@@ -323,7 +323,7 @@ async function inicializarDashboard() {
 }
 
 // Se usuario_id já existe (já autenticado), carregar dashboard
-if (window.usuario_id) {
+if (window.supabase_usuario_id) {
   inicializarDashboard();
 }
 
