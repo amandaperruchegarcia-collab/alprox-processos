@@ -1,7 +1,7 @@
 // Supabase integration for tarefas_pessoais (alprox_s_s_is table)
 async function carregarTarefas() {
   const { data, error } = await window.supabase
-    .from('alprox_s_s_is')
+    .from('alprox_tarefas_pessoais')
     .select('*')
     .eq('usuario_id', window.supabase_usuario_id)
     .order('prazo', { ascending: true, nullsFirst: false });
@@ -15,7 +15,7 @@ async function carregarTarefas() {
 
 async function salvarTarefa(tarefa) {
   const { error } = await window.supabase
-    .from('alprox_s_s_is')
+    .from('alprox_tarefas_pessoais')
     .insert({
       usuario_id: window.supabase_usuario_id,
       titulo: tarefa.titulo,
@@ -32,7 +32,7 @@ async function salvarTarefa(tarefa) {
 
 async function atualizarTarefa(id, tarefaAtualizada) {
   const { error } = await window.supabase
-    .from('alprox_s_s_is')
+    .from('alprox_tarefas_pessoais')
     .update({
       titulo: tarefaAtualizada.titulo,
       descricao: tarefaAtualizada.descricao || '',
@@ -51,7 +51,7 @@ async function atualizarTarefa(id, tarefaAtualizada) {
 
 async function deletarTarefa(id) {
   const { error } = await window.supabase
-    .from('alprox_s_s_is')
+    .from('alprox_tarefas_pessoais')
     .delete()
     .eq('id', id)
     .eq('usuario_id', window.supabase_usuario_id);

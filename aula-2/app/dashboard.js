@@ -27,8 +27,8 @@ async function carregarResumoDashboard() {
     const [processos, fluxos, minhasTarefas, tarefasEquipe, prazos, certidoes, certificados, clientes] = await Promise.all([
       supabase.from('processos').select('*', { count: 'exact', head: true }).eq('status', 'ativo'),
       supabase.from('fluxos').select('*', { count: 'exact', head: true }),
-      supabase.from('tarefas_pessoais').select('*').eq('usuario_id', window.supabase_usuario_id),
-      supabase.from('tarefas_equipe').select('*').or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`),
+      supabase.from('alprox_tarefas_pessoais').select('*').eq('usuario_id', window.supabase_usuario_id),
+      supabase.from('alprox_tarefas_equipe').select('*').or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`),
       supabase.from('prazos').select('*').eq('usuario_id', window.supabase_usuario_id),
       supabase.from('certidoes').select('*').eq('usuario_id', window.supabase_usuario_id),
       supabase.from('certificados').select('*').eq('usuario_id', window.supabase_usuario_id),
@@ -98,34 +98,34 @@ async function carregarEventosDoMes(ano, mes) {
 
     // Buscar dados em paralelo
     const [prazos, tarefasPessoais, tarefasEquipe, certidoes, certificados, clientes] = await Promise.all([
-      supabase.from('prazos')
+      supabase.from('alprox_prazos')
         .select('*')
         .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_vencimento', inicioDoPeriodo)
         .lte('data_vencimento', fimDoPeriodo)
         .eq('status', 'pendente'),
 
-      supabase.from('tarefas_pessoais')
+      supabase.from('alprox_tarefas_pessoais')
         .select('*')
         .eq('usuario_id', window.supabase_usuario_id)
         .gte('prazo', inicioDoPeriodo)
         .lte('prazo', fimDoPeriodo)
         .neq('status', 'feito'),
 
-      supabase.from('tarefas_equipe')
+      supabase.from('alprox_tarefas_equipe')
         .select('*')
         .or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`)
         .gte('prazo', inicioDoPeriodo)
         .lte('prazo', fimDoPeriodo)
         .neq('status', 'feito'),
 
-      supabase.from('certidoes')
+      supabase.from('alprox_certidoes')
         .select('*')
         .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_validade', inicioDoPeriodo)
         .lte('data_validade', fimDoPeriodo),
 
-      supabase.from('certificados')
+      supabase.from('alprox_certificados')
         .select('*')
         .eq('usuario_id', window.supabase_usuario_id)
         .gte('data_validade', inicioDoPeriodo)

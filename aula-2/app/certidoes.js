@@ -20,7 +20,7 @@ function calcularStatusCertidao(dataValidade) {
 async function carregarCertidoes() {
   try {
     const { data, error } = await window.supabase
-      .from('certidoes')
+      .from('alprox_certidoes')
       .select('*')
       .eq('usuario_id', window.supabase_usuario_id);
 
@@ -52,7 +52,7 @@ async function salvarCertidao(certidao) {
     const status = calcularStatusCertidao(certidao.data_validade);
 
     const { data, error } = await window.supabase
-      .from('certidoes')
+      .from('alprox_certidoes')
       .insert({
         usuario_id: window.supabase_usuario_id,
         cliente_id: certidao.cliente_id || null,
@@ -86,7 +86,7 @@ async function atualizarCertidao(id, certidao) {
     const status = calcularStatusCertidao(certidao.data_validade);
 
     const { error } = await window.supabase
-      .from('certidoes')
+      .from('alprox_certidoes')
       .update({
         cliente_id: certidao.cliente_id || null,
         tipo: certidao.tipo,
@@ -115,7 +115,7 @@ async function atualizarCertidao(id, certidao) {
 async function deletarCertidao(id) {
   try {
     const { error } = await window.supabase
-      .from('certidoes')
+      .from('alprox_certidoes')
       .delete()
       .eq('id', id);
 

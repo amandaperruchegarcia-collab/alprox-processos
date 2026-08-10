@@ -1,5 +1,5 @@
 // Importar configuração do Supabase
-import { supabase, usuario_id } from './supabase-config.js';
+import { supabase } from './supabase-config.js';
 
 const CHAVE_STORAGE_COLABORADORES = 'alprox_colaboradores';
 
@@ -34,9 +34,9 @@ function nomeResponsavelPrazo(responsavelId) {
 async function carregarTarefasEquipe(filtroResponsavel = null) {
   try {
     let query = supabase
-      .from('alprox_2s_equipe')
+      .from('alprox_tarefas_equipe')
       .select('*')
-      .or(`criado_por.eq.${usuario_id},atribuido_para.eq.${usuario_id}`);
+      .or(`criado_por.eq.${window.supabase_usuario_id},atribuido_para.eq.${window.supabase_usuario_id}`);
 
     // Se há filtro por responsável, adiciona condição adicional
     if (filtroResponsavel) {
@@ -65,7 +65,7 @@ async function carregarTarefasEquipe(filtroResponsavel = null) {
 async function salvarTarefaEquipe(tarefa) {
   try {
     const { error } = await supabase
-      .from('alprox_2s_equipe')
+      .from('alprox_tarefas_equipe')
       .insert({
         criado_por: usuario_id,
         atribuido_para: tarefa.responsavelId,
@@ -95,7 +95,7 @@ async function salvarTarefaEquipe(tarefa) {
 async function atualizarTarefaEquipe(id, tarefa) {
   try {
     const { error } = await supabase
-      .from('alprox_2s_equipe')
+      .from('alprox_tarefas_equipe')
       .update({
         titulo: tarefa.titulo,
         atribuido_para: tarefa.responsavelId,
@@ -126,7 +126,7 @@ async function atualizarTarefaEquipe(id, tarefa) {
 async function deletarTarefaEquipe(id) {
   try {
     const { error } = await supabase
-      .from('alprox_2s_equipe')
+      .from('alprox_tarefas_equipe')
       .delete()
       .eq('id', id)
       .eq('criado_por', usuario_id);  // Validação: só deleta se criou

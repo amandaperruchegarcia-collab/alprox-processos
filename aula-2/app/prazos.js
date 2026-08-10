@@ -7,7 +7,7 @@ async function carregarPrazos() {
     }
 
     const { data, error } = await window.supabase
-      .from('prazos')
+      .from('alprox_prazos')
       .select('*')
       .eq('usuario_id', window.supabase_usuario_id)
       .order('data_vencimento', { ascending: true });
@@ -38,7 +38,7 @@ async function salvarPrazo(prazo) {
     }
 
     const { error } = await window.supabase
-      .from('prazos')
+      .from('alprox_prazos')
       .insert({
         usuario_id: window.supabase_usuario_id,
         titulo: prazo.titulo,
@@ -66,7 +66,7 @@ async function atualizarPrazo(id, prazo) {
     }
 
     const { error } = await window.supabase
-      .from('prazos')
+      .from('alprox_prazos')
       .update({
         titulo: prazo.titulo,
         cliente_id: prazo.clienteId || null,
@@ -96,7 +96,7 @@ async function deletarPrazo(id) {
     }
 
     const { error } = await window.supabase
-      .from('prazos')
+      .from('alprox_prazos')
       .delete()
       .eq('id', id)
       .eq('usuario_id', window.supabase_usuario_id);

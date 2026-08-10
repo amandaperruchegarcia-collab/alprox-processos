@@ -15,7 +15,7 @@ async function carregarCertificados() {
     }
 
     const { data, error } = await supabase
-      .from('certificados')
+      .from('alprox_certificados')
       .select('*')
       .eq('usuario_id', window.supabase_usuario_id)
       .order('data_validade', { ascending: true });
@@ -64,7 +64,7 @@ async function salvarCertificado(certificado) {
     const status = certificado.validade < hoje ? 'vencido' : 'válido';
 
     const { error } = await supabase
-      .from('certificados')
+      .from('alprox_certificados')
       .insert({
         usuario_id: window.supabase_usuario_id,
         cliente_id: certificado.clienteId || null,
@@ -96,7 +96,7 @@ async function atualizarCertificado(id, certificado) {
     const status = certificado.validade < hoje ? 'vencido' : 'válido';
 
     const { error } = await supabase
-      .from('certificados')
+      .from('alprox_certificados')
       .update({
         cliente_id: certificado.clienteId || null,
         tipo: certificado.tipo,
@@ -125,7 +125,7 @@ async function atualizarCertificado(id, certificado) {
 async function deletarCertificado(id) {
   try {
     const { error } = await supabase
-      .from('certificados')
+      .from('alprox_certificados')
       .delete()
       .eq('id', id);
 
