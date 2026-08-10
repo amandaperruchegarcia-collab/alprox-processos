@@ -334,3 +334,6 @@ if (document.readyState === 'loading') {
 } else {
   inicializarCertificados();
 }
+
+// Também recarregar quando receber evento de login
+window.addEventListener('usuario-logado', inicializarCertificados);

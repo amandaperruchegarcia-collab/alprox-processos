@@ -260,3 +260,6 @@ if (document.readyState === 'loading') {
 } else {
   inicializarTarefas();
 }
+
+// Também recarregar quando receber evento de login
+window.addEventListener('usuario-logado', inicializarTarefas);

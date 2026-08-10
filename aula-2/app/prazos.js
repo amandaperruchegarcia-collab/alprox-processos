@@ -332,3 +332,6 @@ if (document.readyState === 'loading') {
 } else {
   inicializarPrazos();
 }
+
+// Também recarregar quando receber evento de login
+window.addEventListener('usuario-logado', inicializarPrazos);

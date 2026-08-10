@@ -310,7 +310,11 @@ certidaoBuscaEl.addEventListener('input', renderizarCertidoes);
 // ---------- Início ----------
 
 // Carregar certidões ao inicializar
-(async () => {
+async function inicializarCertidoes() {
   certidoes = await carregarCertidoes();
   renderizarCertidoes();
-})();
+}
+
+// Chamar imediatamente e também quando receber evento de login
+inicializarCertidoes();
+window.addEventListener('usuario-logado', inicializarCertidoes);
