@@ -67,7 +67,7 @@ async function salvarTarefaEquipe(tarefa) {
     const { error } = await supabase
       .from('alprox_tarefas_equipe')
       .insert({
-        criado_por: usuario_id,
+        criado_por: window.supabase_usuario_id,
         atribuido_para: tarefa.responsavelId,
         titulo: tarefa.titulo,
         descricao: tarefa.descricao || '',
@@ -105,7 +105,7 @@ async function atualizarTarefaEquipe(id, tarefa) {
         atualizado_em: new Date().toISOString()
       })
       .eq('id', id)
-      .eq('criado_por', usuario_id);  // Validação: só edita se criou
+      .eq('criado_por', window.supabase_usuario_id);  // Validação: só edita se criou
 
     if (error) {
       console.error('Erro ao atualizar tarefa da equipe:', error);
@@ -129,7 +129,7 @@ async function deletarTarefaEquipe(id) {
       .from('alprox_tarefas_equipe')
       .delete()
       .eq('id', id)
-      .eq('criado_por', usuario_id);  // Validação: só deleta se criou
+      .eq('criado_por', window.supabase_usuario_id);  // Validação: só deleta se criou
 
     if (error) {
       console.error('Erro ao deletar tarefa da equipe:', error);
@@ -435,15 +435,15 @@ renderizarColaboradores();
 
 // Carregar tarefas da equipe do Supabase quando a página inicializa
 document.addEventListener('DOMContentLoaded', async () => {
-  // Aguarda um pouco para garantir que usuario_id foi inicializado
+  // Aguarda um pouco para garantir que window.supabase_usuario_id foi inicializado
   const tentarCarregar = setInterval(async () => {
-    if (usuario_id) {
+    if (window.supabase_usuario_id) {
       clearInterval(tentarCarregar);
       await renderizarTarefasEquipe();
     }
   }, 100);
 
-  // Timeout: se usuario_id não foi inicializado em 5 segundos, parar de tentar
+  // Timeout: se window.supabase_usuario_id não foi inicializado em 5 segundos, parar de tentar
   setTimeout(() => clearInterval(tentarCarregar), 5000);
 });
 
