@@ -1,4 +1,5 @@
 import { supabase, usuario_id } from './supabase-config.js';
+import { escaparHtml, ehUrlSegura } from './utils.js';
 
 const DEPARTAMENTOS = [
   'Administrativo',
@@ -305,21 +306,6 @@ function criarCard(processo) {
   return card;
 }
 
-function escaparHtml(texto) {
-  const div = document.createElement('div');
-  div.textContent = texto;
-  return div.innerHTML;
-}
-
-function ehUrlSegura(url) {
-  if (!url) return false;
-  try {
-    const analisada = new URL(url);
-    return analisada.protocol === 'http:' || analisada.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
 
 async function renderizarLista() {
   try {

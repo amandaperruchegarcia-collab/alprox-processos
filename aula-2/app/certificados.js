@@ -1,5 +1,6 @@
 // Importar Supabase e variáveis globais
 import { supabase } from './supabase-config.js';
+import { escaparHtml, formatarData } from './utils.js';
 
 let certificados = [];
 

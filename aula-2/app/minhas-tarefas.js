@@ -1,3 +1,5 @@
+import { escaparHtml, formatarData } from './utils.js';
+
 // Supabase integration for tarefas_pessoais (alprox_s_s_is table)
 async function carregarTarefas() {
   const { data, error } = await window.supabase
@@ -186,10 +188,6 @@ function tarefaEstaAtrasada(tarefa) {
   return tarefa.prazo < hoje;
 }
 
-function formatarData(dataISO) {
-  const [ano, mes, dia] = dataISO.split('-');
-  return `${dia}/${mes}/${ano}`;
-}
 
 function criarTarefaCard(tarefa) {
   const atrasada = tarefaEstaAtrasada(tarefa);

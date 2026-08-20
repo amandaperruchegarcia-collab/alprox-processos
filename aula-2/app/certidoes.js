@@ -1,3 +1,5 @@
+import { escaparHtml, formatarData } from './utils.js';
+
 const DIAS_ALERTA_VENCIMENTO = 30;
 
 // Variable para armazenar certidões em memória (carregadas do Supabase)

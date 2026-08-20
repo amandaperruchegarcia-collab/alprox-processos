@@ -1,5 +1,6 @@
 // Importar configuração do Supabase
 import { supabase } from './supabase-config.js';
+import { escaparHtml, formatarData } from './utils.js';
 
 const CHAVE_STORAGE_COLABORADORES = 'alprox_colaboradores';
 

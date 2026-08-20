@@ -1,3 +1,5 @@
+import { escaparHtml, formatarData } from './utils.js';
+
 // Variáveis globais
 let clientes = [];
 let historicoMap = {}; // Mapeia cliente_id -> array de anotações

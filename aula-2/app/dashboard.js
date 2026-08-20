@@ -1,3 +1,5 @@
+import { escaparHtml } from './utils.js';
+
 function hojeISO() {
   return new Date().toISOString().slice(0, 10);
 }

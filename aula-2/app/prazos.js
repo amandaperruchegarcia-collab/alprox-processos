@@ -1,3 +1,5 @@
+import { escaparHtml, formatarData } from './utils.js';
+
 // Função para carregar prazos do Supabase
 async function carregarPrazos() {
   try {
