@@ -313,10 +313,14 @@ certidaoBuscaEl.addEventListener('input', renderizarCertidoes);
 
 // Carregar certidões ao inicializar
 async function inicializarCertidoes() {
+  if (!window.supabase_usuario_id) {
+    console.warn('Aguardando autenticação...');
+    return;
+  }
   certidoes = await carregarCertidoes();
   renderizarCertidoes();
 }
 
-// Chamar imediatamente e também quando receber evento de login
-inicializarCertidoes();
+// IMPORTANTE: Apenas carregar dados APÓS autenticação
+// Não chamar imediatamente no startup para evitar erros de usuario_id nulo
 window.addEventListener('usuario-logado', inicializarCertidoes);

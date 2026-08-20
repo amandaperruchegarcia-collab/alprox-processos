@@ -324,16 +324,14 @@ prazoMostrarCumpridosEl.addEventListener('change', renderizarPrazos);
 
 // Inicializar carregando dados do Supabase na primeira vez
 async function inicializarPrazos() {
+  if (!window.supabase_usuario_id) {
+    console.warn('Aguardando autenticação...');
+    return;
+  }
   prazos = await carregarPrazos();
   renderizarPrazos();
 }
 
-// Chamar inicialização quando o módulo estiver pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', inicializarPrazos);
-} else {
-  inicializarPrazos();
-}
-
-// Também recarregar quando receber evento de login
+// IMPORTANTE: Apenas carregar dados APÓS autenticação
+// Não carregar imediatamente no startup para evitar erros de usuario_id nulo
 window.addEventListener('usuario-logado', inicializarPrazos);

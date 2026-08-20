@@ -329,12 +329,6 @@ async function inicializarCertificados() {
   }
 }
 
-// Chamar inicialização quando o DOM está pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', inicializarCertificados);
-} else {
-  inicializarCertificados();
-}
-
-// Também recarregar quando receber evento de login
+// IMPORTANTE: Apenas carregar dados APÓS autenticação
+// Não carregar imediatamente no startup para evitar erros de usuario_id nulo
 window.addEventListener('usuario-logado', inicializarCertificados);
